@@ -60,6 +60,12 @@ function selectPackageById(id) {
 
 // ---- Booking form ------------------------------------------------------
 
+function timeTakenMessage() {
+  return BOOKING_BUFFER_HOURS > 0
+    ? `That time has already been booked. Please choose a different time — Andrea needs at least ${BOOKING_BUFFER_HOURS} hours between appointments.`
+    : "That time has already been booked. Please choose a different time.";
+}
+
 async function checkAvailability(date, time) {
   if (!backendReady() || !date || !time) return true; // can't check, don't block
   try {
@@ -91,7 +97,7 @@ function initBookingForm() {
     availabilityEl.className = "form-status";
     const available = await checkAvailability(date, time);
     if (!available) {
-      availabilityEl.textContent = `That time has already been booked. Please choose a different time — Andrea needs at least ${BOOKING_BUFFER_HOURS} hours between appointments.`;
+      availabilityEl.textContent = timeTakenMessage();
       availabilityEl.className = "form-status form-status-warn";
     } else {
       availabilityEl.textContent = "";
@@ -114,7 +120,7 @@ function initBookingForm() {
 
     const available = await checkAvailability(fd.get("date"), fd.get("time"));
     if (!available) {
-      statusEl.textContent = `That time has already been booked. Please choose a different time — Andrea needs at least ${BOOKING_BUFFER_HOURS} hours between appointments.`;
+      statusEl.textContent = timeTakenMessage();
       statusEl.className = "form-status form-status-warn";
       return;
     }

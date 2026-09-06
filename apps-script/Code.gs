@@ -28,8 +28,11 @@ const NOTIFY_EMAILS = ["js202189@gmail.com", "Andreabencomo0907@icloud.com"];
 // of whichever Google account this script is deployed under (Andrea's).
 const CALENDAR_ID = "primary";
 
-// Minimum gap required between two appointments, in hours.
-const BOOKING_BUFFER_HOURS = 3;
+// Minimum gap required between two appointments, in hours. Set to 0 for
+// now (only blocks an exact same date+time match) — a good next step is
+// making this vary per package (e.g. a Bridal Package needs a longer gap
+// than a solo Hair/Makeup Only booking).
+const BOOKING_BUFFER_HOURS = 0;
 
 // ------------------------------------------------------------------------
 
@@ -189,7 +192,7 @@ function sendBookingEmail(data, conflict) {
   const subject = `${conflict ? "⚠️ DOUBLE-BOOKED — " : ""}New booking request: ${data.name || "Someone"} (${data.plan || ""})`;
   const body = [
     conflict
-      ? `⚠️ This time is within ${BOOKING_BUFFER_HOURS} hours of another booking — please contact the client to reschedule.\n`
+      ? `⚠️ This conflicts with another booking${BOOKING_BUFFER_HOURS > 0 ? ` (within ${BOOKING_BUFFER_HOURS} hours)` : ""} — please contact the client to reschedule.\n`
       : ``,
     `New booking request from the website:`,
     ``,
