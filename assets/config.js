@@ -15,8 +15,8 @@ const SHARED_TOKEN = "AndreaGlam2026";
 
 // Links shown on the admin dashboard (admin.html) for quick access.
 // Fill these in once you've created the Google Sheet / Calendar.
-const GOOGLE_SHEET_URL = "";     // e.g. https://docs.google.com/spreadsheets/d/xxxxx
-const GOOGLE_CALENDAR_URL = "";  // e.g. https://calendar.google.com/calendar/u/0/r
+const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1FAli5UZy_0BCxIIxWcj6Gf8ueGTAc3y7KLU3OVoQno0/edit";
+const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/u/0/r";
 
 // Social links.
 const SOCIAL = {
