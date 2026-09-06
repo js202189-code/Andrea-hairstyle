@@ -18,7 +18,7 @@
 const SHARED_TOKEN = "andrea-cambia-esto-2026";
 
 // Who gets an email every time someone submits a booking request.
-const NOTIFY_EMAILS = ["js202189@gmail.com"]; // add Andrea's email here too, e.g. ["you@gmail.com", "andrea@gmail.com"]
+const NOTIFY_EMAILS = ["js202189@gmail.com", "Andreabencomo0907@icloud.com"];
 
 // Which Google Calendar to add booking events to. "primary" = the calendar
 // of whichever Google account this script is deployed under (Andrea's).
