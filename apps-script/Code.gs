@@ -238,5 +238,5 @@ function setupSheets() {
   );
 
   dash.autoResizeColumns(1, 6);
-  SpreadsheetApp.getUi().alert("Setup complete! Bookings, Content, and Dashboard sheets are ready.");
+  Logger.log("Setup complete! Bookings, Content, and Dashboard sheets are ready.");
 }
