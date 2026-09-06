@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Andrea's Dashboard</title>
+<style>
+:root{--ink:#241f20;--muted:#756b6d;--cream:#fbf7f3;--gold:#a9824d;--line:#eadfda;--ok:#2f6b3a;--warn:#9a4b2f}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--cream);line-height:1.6}
+.container{width:min(760px,92%);margin:40px auto 80px}
+h1{font-family:Georgia,serif;font-size:36px;margin:0 0 6px}
+.sub{color:var(--muted);margin-bottom:36px}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px;margin-bottom:24px}
+.card h2{font-family:Georgia,serif;font-size:22px;margin:0 0 6px}
+.card p.hint{color:var(--muted);font-size:14px;margin:0 0 18px}
+label{font-size:13px;font-weight:700;display:block;margin-top:14px}
+input,select,textarea{width:100%;margin-top:6px;border:1px solid #ddd0cc;border-radius:12px;padding:12px;font:inherit;background:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:13px 22px;border-radius:999px;font-weight:700;font-size:14px;background:var(--ink);color:#fff;border:none;cursor:pointer;font-family:inherit;margin-top:18px}
+.btn:disabled{opacity:.6}
+.links{display:flex;gap:12px;flex-wrap:wrap}
+.links a{border:1px solid var(--line);background:#fff;padding:10px 16px;border-radius:999px;text-decoration:none;color:var(--ink);font-size:14px;font-weight:600}
+.status{padding:12px 16px;border-radius:12px;font-size:14px;margin-top:14px}
+.status:empty{display:none}
+.status-ok{background:#eaf3ea;color:var(--ok)}
+.status-warn{background:#f6e9e2;color:var(--warn)}
+.lock{max-width:420px;margin:120px auto;text-align:center}
+.lock input{text-align:center}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="container lock" id="lock-screen">
+  <h1>Andrea's Dashboard</h1>
+  <p class="sub">Enter your access phrase to continue.</p>
+  <input type="password" id="lock-input" placeholder="Access phrase">
+  <button class="btn" id="lock-btn">Enter</button>
+  <p class="status" id="lock-status"></p>
+</div>
+
+<div class="container hidden" id="dashboard">
+  <h1>Andrea's Dashboard</h1>
+  <p class="sub">Manage your featured videos, bookings, and calendar from one place.</p>
+
+  <div class="card">
+    <h2>Quick links</h2>
+    <p class="hint">Your bookings/spending spreadsheet and calendar (set up via Google).</p>
+    <div class="links" id="quick-links"></div>
+  </div>
+
+  <div class="card">
+    <h2>Add a new Instagram / TikTok video</h2>
+    <p class="hint">Paste a link to a video you just posted. It'll show up in the "Fresh off Instagram & TikTok" section on your website automatically.</p>
+    <form id="content-form">
+      <label>Platform
+        <select name="platform">
+          <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+        </select>
+      </label>
+      <label>Video link<input required name="url" placeholder="https://instagram.com/reel/..."></label>
+      <label>Caption (what shows on the website)<input required name="caption" placeholder="e.g. Quinceañera glam transformation ✨"></label>
+      <button class="btn" type="submit">Add to Website</button>
+      <p class="status" id="content-status"></p>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>How bookings work</h2>
+    <p class="hint">Every booking request from your website is automatically: added as a row to your spreadsheet, added to your Google Calendar, and emailed to you. Open the spreadsheet link above any time to see everyone who has booked and what they selected.</p>
+  </div>
+</div>
+
+<script src="assets/config.js"></script>
+<script>
+const lockScreen = document.getElementById("lock-screen");
+const dashboard = document.getElementById("dashboard");
+const lockStatus = document.getElementById("lock-status");
+
+function unlock() {
+  lockScreen.classList.add("hidden");
+  dashboard.classList.remove("hidden");
+  renderQuickLinks();
+}
+
+// Lightweight gate so a casual visitor who stumbles on this URL can't easily
+// poke around. This is NOT real security — anyone who has this page's URL
+// and guesses the phrase (or reads this file) can get in. Don't share this
+// link publicly, and don't store anything truly sensitive here.
+document.getElementById("lock-btn").addEventListener("click", () => {
+  const val = document.getElementById("lock-input").value.trim();
+  if (val && val === SHARED_TOKEN) {
+    sessionStorage.setItem("andrea-admin-unlocked", "1");
+    unlock();
+  } else {
+    lockStatus.textContent = "That's not the right phrase — check with whoever set up the site.";
+    lockStatus.className = "status status-warn";
+  }
+});
+
+if (sessionStorage.getItem("andrea-admin-unlocked") === "1") unlock();
+
+function renderQuickLinks() {
+  const wrap = document.getElementById("quick-links");
+  const links = [];
+  if (GOOGLE_SHEET_URL) links.push(`<a href="${GOOGLE_SHEET_URL}" target="_blank" rel="noopener">📊 Bookings & Spending Sheet</a>`);
+  if (GOOGLE_CALENDAR_URL) links.push(`<a href="${GOOGLE_CALENDAR_URL}" target="_blank" rel="noopener">📅 Calendar</a>`);
+  wrap.innerHTML = links.length ? links.join("") : `<p class="hint" style="margin:0">Not set up yet — add GOOGLE_SHEET_URL and GOOGLE_CALENDAR_URL in assets/config.js.</p>`;
+}
+
+document.getElementById("content-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById("content-status");
+  if (!APPS_SCRIPT_URL) {
+    statusEl.textContent = "Backend isn't connected yet — see apps-script/SETUP.md.";
+    statusEl.className = "status status-warn";
+    return;
+  }
+  const fd = new FormData(e.target);
+  const payload = {
+    action: "content",
+    token: SHARED_TOKEN,
+    platform: fd.get("platform"),
+    url: fd.get("url"),
+    caption: fd.get("caption"),
+    submittedAt: new Date().toISOString(),
+  };
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+    });
+    statusEl.textContent = "Added! It'll appear on the website's video section.";
+    statusEl.className = "status status-ok";
+    e.target.reset();
+  } catch (err) {
+    statusEl.textContent = "Something went wrong — try again.";
+    statusEl.className = "status status-warn";
+  }
+});
+</script>
+</body>
+</html>
