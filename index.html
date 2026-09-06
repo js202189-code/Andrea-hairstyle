@@ -262,8 +262,9 @@ textarea{min-height:120px;resize:vertical}
       </div>
       <div><label>Name<input required name="name" placeholder="Your name"></label></div>
       <div><label>Phone or email<input required name="contact" placeholder="Best way to reach you"></label></div>
-      <div><label>Event date<input type="date" name="date"></label></div>
-      <div><label>Preferred time<input type="time" name="time"></label></div>
+      <div><label>Event date<input required type="date" name="date"></label></div>
+      <div><label>Preferred time<input required type="time" name="time"></label></div>
+      <div class="full form-status" id="availability-status"></div>
       <div class="full"><label>Event type<select name="event"><option>Quinceañera</option><option>Wedding / Bridal</option><option>Prom</option><option>Party / Special Event</option><option>Photoshoot</option><option>Other</option></select></label></div>
       <div class="full"><label>What services do you need?<input name="services" placeholder="Hair, makeup, or both"></label></div>
       <div class="full"><label>Tell Andrea about your vision<textarea name="message" placeholder="Location, number of people, inspiration, and anything else that would help."></textarea></label></div>

@@ -28,6 +28,9 @@ const NOTIFY_EMAILS = ["js202189@gmail.com", "Andreabencomo0907@icloud.com"];
 // of whichever Google account this script is deployed under (Andrea's).
 const CALENDAR_ID = "primary";
 
+// Minimum gap required between two appointments, in hours.
+const BOOKING_BUFFER_HOURS = 3;
+
 // ------------------------------------------------------------------------
 
 const BOOKINGS_SHEET = "Bookings";
@@ -81,12 +84,17 @@ function doGet(e) {
   if (e.parameter.action === "content") {
     return jsonOutput(getActiveContent());
   }
+  if (e.parameter.action === "checkAvailability") {
+    const taken = isSlotTaken(e.parameter.date, e.parameter.time);
+    return jsonOutput({ available: !taken });
+  }
   return jsonOutput({ ok: true, message: "Andrea Bencomo booking backend is running." });
 }
 
 function handleBooking(data) {
   const sheet = ensureSheet(BOOKINGS_SHEET, BOOKINGS_HEADERS);
   const priceNumeric = extractNumber(data.price);
+  const conflict = isSlotTaken(data.date, data.time, sheet);
 
   sheet.appendRow([
     new Date(),
@@ -100,13 +108,39 @@ function handleBooking(data) {
     priceNumeric,
     data.services || "",
     data.message || "",
-    "New",
+    conflict ? "CONFLICT — double-booked, contact client" : "New",
   ]);
 
-  createCalendarEvent(data);
-  sendBookingEmail(data);
+  createCalendarEvent(data, conflict);
+  sendBookingEmail(data, conflict);
 
-  return jsonOutput({ ok: true });
+  return jsonOutput({ ok: true, conflict });
+}
+
+/**
+ * True if `dateStr`/`timeStr` falls within BOOKING_BUFFER_HOURS of an
+ * existing booking. Used both for the website's live availability check
+ * (doGet ?action=checkAvailability) and as a server-side safety net at
+ * submit time, in case two people submit around the same moment.
+ */
+function isSlotTaken(dateStr, timeStr, sheet) {
+  if (!dateStr || !timeStr) return false; // can't check without both
+  const requested = new Date(`${dateStr}T${timeStr}:00`);
+  if (isNaN(requested.getTime())) return false;
+
+  const bookingsSheet = sheet || ensureSheet(BOOKINGS_SHEET, BOOKINGS_HEADERS);
+  const rows = bookingsSheet.getDataRange().getValues();
+  rows.shift(); // headers
+  const bufferMs = BOOKING_BUFFER_HOURS * 60 * 60 * 1000;
+
+  return rows.some(row => {
+    const rowDate = row[3]; // Event Date
+    const rowTime = row[4]; // Time
+    if (!rowDate || !rowTime) return false;
+    const existing = new Date(`${rowDate}T${rowTime}:00`);
+    if (isNaN(existing.getTime())) return false;
+    return Math.abs(existing.getTime() - requested.getTime()) < bufferMs;
+  });
 }
 
 function handleContent(data) {
@@ -125,11 +159,11 @@ function getActiveContent() {
     .reverse();
 }
 
-function createCalendarEvent(data) {
+function createCalendarEvent(data, conflict) {
   if (!data.date) return; // no date given, skip calendar
   try {
     const calendar = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
-    const title = `${data.eventType || "Booking"} — ${data.name || "Client"}`;
+    const title = `${conflict ? "⚠️ DOUBLE-BOOKED — " : ""}${data.eventType || "Booking"} — ${data.name || "Client"}`;
     const description = [
       `Plan: ${data.plan || ""} (${data.price || ""})`,
       `Contact: ${data.contact || ""}`,
@@ -150,10 +184,13 @@ function createCalendarEvent(data) {
   }
 }
 
-function sendBookingEmail(data) {
+function sendBookingEmail(data, conflict) {
   if (!NOTIFY_EMAILS || NOTIFY_EMAILS.length === 0) return;
-  const subject = `New booking request: ${data.name || "Someone"} (${data.plan || ""})`;
+  const subject = `${conflict ? "⚠️ DOUBLE-BOOKED — " : ""}New booking request: ${data.name || "Someone"} (${data.plan || ""})`;
   const body = [
+    conflict
+      ? `⚠️ This time is within ${BOOKING_BUFFER_HOURS} hours of another booking — please contact the client to reschedule.\n`
+      : ``,
     `New booking request from the website:`,
     ``,
     `Name: ${data.name || ""}`,
@@ -201,6 +238,13 @@ function ensureSheet(name, headers) {
     sheet.appendRow(headers);
     sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
+  }
+  if (name === BOOKINGS_SHEET) {
+    // Keep Event Date (D) and Time (E) as plain text so Sheets never
+    // auto-converts them — isSlotTaken() depends on reading back the
+    // exact "YYYY-MM-DD"/"HH:MM" strings that were written. Applied every
+    // call (not just on creation) so it also fixes a sheet made earlier.
+    sheet.getRange("D:E").setNumberFormat("@");
   }
   return sheet;
 }

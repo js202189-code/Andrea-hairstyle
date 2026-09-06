@@ -60,10 +60,46 @@ function selectPackageById(id) {
 
 // ---- Booking form ------------------------------------------------------
 
+async function checkAvailability(date, time) {
+  if (!backendReady() || !date || !time) return true; // can't check, don't block
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=checkAvailability&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`);
+    if (!res.ok) return true;
+    const data = await res.json();
+    return data.available !== false;
+  } catch (err) {
+    return true; // don't block the user if the check itself fails
+  }
+}
+
 function initBookingForm() {
   const form = document.getElementById("booking-form");
   if (!form) return;
   const statusEl = document.getElementById("booking-status");
+  const availabilityEl = document.getElementById("availability-status");
+  const dateInput = form.querySelector('input[name="date"]');
+  const timeInput = form.querySelector('input[name="time"]');
+
+  async function updateAvailability() {
+    const date = dateInput.value;
+    const time = timeInput.value;
+    if (!date || !time || !availabilityEl) {
+      if (availabilityEl) availabilityEl.textContent = "";
+      return;
+    }
+    availabilityEl.textContent = "Checking availability...";
+    availabilityEl.className = "form-status";
+    const available = await checkAvailability(date, time);
+    if (!available) {
+      availabilityEl.textContent = `That time has already been booked. Please choose a different time — Andrea needs at least ${BOOKING_BUFFER_HOURS} hours between appointments.`;
+      availabilityEl.className = "form-status form-status-warn";
+    } else {
+      availabilityEl.textContent = "";
+      availabilityEl.className = "form-status";
+    }
+  }
+  dateInput?.addEventListener("change", updateAvailability);
+  timeInput?.addEventListener("change", updateAvailability);
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -75,6 +111,14 @@ function initBookingForm() {
     }
 
     const fd = new FormData(form);
+
+    const available = await checkAvailability(fd.get("date"), fd.get("time"));
+    if (!available) {
+      statusEl.textContent = `That time has already been booked. Please choose a different time — Andrea needs at least ${BOOKING_BUFFER_HOURS} hours between appointments.`;
+      statusEl.className = "form-status form-status-warn";
+      return;
+    }
+
     const pkg = PACKAGES.find(p => p.id === fd.get("plan"));
     const payload = {
       action: "booking",

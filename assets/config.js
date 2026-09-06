@@ -13,6 +13,10 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyT4ACD43yjJ2-_
 // the SHARED_TOKEN constant in apps-script/Code.gs.
 const SHARED_TOKEN = "AndreaGlam2026";
 
+// Minimum gap required between two appointments, in hours. Must match
+// BOOKING_BUFFER_HOURS in apps-script/Code.gs.
+const BOOKING_BUFFER_HOURS = 3;
+
 // Links shown on the admin dashboard (admin.html) for quick access.
 // Fill these in once you've created the Google Sheet / Calendar.
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1FAli5UZy_0BCxIIxWcj6Gf8ueGTAc3y7KLU3OVoQno0/edit";
