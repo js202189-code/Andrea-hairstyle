@@ -6,7 +6,7 @@
 // After you deploy the Google Apps Script (see /apps-script/SETUP.md), paste
 // the Web App URL it gives you here. Until then, forms show a friendly
 // "not connected yet" message instead of failing silently.
-const APPS_SCRIPT_URL = "";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyT4ACD43yjJ2-_0aXAhzWtL0UO6h5S4ou-tBfnb0JLkmFwwQ7eBxTx8lHEmf3sResS/exec";
 
 // A shared secret so random bots that find the Apps Script URL can't spam
 // your sheet. Change this to any phrase, then paste the SAME phrase into
