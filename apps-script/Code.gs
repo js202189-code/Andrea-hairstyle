@@ -168,7 +168,13 @@ function sendBookingEmail(data) {
     `This was automatically logged in your Bookings spreadsheet and added to your calendar.`,
   ].join("\n");
 
-  MailApp.sendEmail(NOTIFY_EMAILS.join(","), subject, body);
+  try {
+    MailApp.sendEmail(NOTIFY_EMAILS.join(","), subject, body);
+  } catch (err) {
+    // Don't fail the whole booking if the email step has an issue — the
+    // sheet row and calendar event above already succeeded regardless.
+    Logger.log("sendBookingEmail failed: " + err);
+  }
 }
 
 function isRateLimited(action) {
