@@ -89,6 +89,7 @@ label{font-size:13px;font-weight:700}
 input,select,textarea{width:100%;margin-top:6px;border:1px solid #ddd0cc;border-radius:12px;padding:13px;font:inherit;background:#fff}
 textarea{min-height:120px;resize:vertical}
 .full{grid-column:1/-1}
+.hp-field{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0}
 .form-status{padding:12px 16px;border-radius:12px;font-size:14px;margin-top:6px}
 .form-status:empty{display:none}
 .form-status-ok{background:#eaf3ea;color:var(--ok)}
@@ -251,6 +252,9 @@ textarea{min-height:120px;resize:vertical}
   <p class="intro">Choose your plan, share your event details, and Andrea will follow up to confirm.</p>
   <div class="booking">
     <form id="booking-form">
+      <div class="hp-field" aria-hidden="true">
+        <label>Company<input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+      </div>
       <div class="full">
         <label>Plan
           <select id="plan-select" name="plan"></select>

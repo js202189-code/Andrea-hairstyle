@@ -11,7 +11,7 @@ const APPS_SCRIPT_URL = "";
 // A shared secret so random bots that find the Apps Script URL can't spam
 // your sheet. Change this to any phrase, then paste the SAME phrase into
 // the SHARED_TOKEN constant in apps-script/Code.gs.
-const SHARED_TOKEN = "andrea-cambia-esto-2026";
+const SHARED_TOKEN = "AndreaGlam2026";
 
 // Links shown on the admin dashboard (admin.html) for quick access.
 // Fill these in once you've created the Google Sheet / Calendar.

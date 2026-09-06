@@ -19,12 +19,12 @@ Takes about 10 minutes. Do this once.
 2. Delete any placeholder code in the editor.
 3. Open [`Code.gs`](./Code.gs) from this folder, copy its entire contents,
    and paste it into the Apps Script editor.
-4. Near the top of the pasted code, edit:
-   - `SHARED_TOKEN` — change this to any phrase you like (letters/numbers, no
-     spaces needed, but avoid quotes). **Remember it** — you'll paste the same
-     phrase into `assets/config.js` in step 5.
-   - `NOTIFY_EMAILS` — add every email address that should get a message when
-     someone books (Andrea's, yours, or both).
+4. The pasted code already has a default `SHARED_TOKEN` (`AndreaGlam2026`) and
+   both of your emails in `NOTIFY_EMAILS` — no edits needed unless you want to
+   change them:
+   - `SHARED_TOKEN` — must exactly match `SHARED_TOKEN` in `assets/config.js`
+     (it already does, but if you change one, change the other).
+   - `NOTIFY_EMAILS` — who gets emailed when someone books.
    - `CALENDAR_ID` — leave as `"primary"` to use the calendar of whichever
      Google account you deploy this under.
 5. Click the **Save** icon (or Ctrl/Cmd+S).
@@ -91,6 +91,12 @@ Takes about 10 minutes. Do this once.
 - The "admin" lock on `admin.html` is a simple shared phrase, not real
   authentication — don't share the admin.html link publicly, and don't rely
   on it for anything sensitive.
+- "Who has access: Anyone" on the Web App deployment is required so the
+  public site (visitors aren't logged into Google) can reach it — but it
+  does NOT expose your Bookings sheet, calendar, or email. It only lets
+  people submit a booking or a content link, or fetch the public "Content"
+  list. The script has a built-in honeypot field, a bot-speed check, and a
+  20-submissions-per-minute cap to cut down on spam/junk entries.
 - If you outgrow this (need SMS reminders, online deposits, staff logins),
   the natural next step is a dedicated booking platform (e.g. Square
   Appointments, Vagaro) — the site's booking form can be swapped to point at

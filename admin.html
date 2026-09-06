@@ -28,6 +28,7 @@ input,select,textarea{width:100%;margin-top:6px;border:1px solid #ddd0cc;border-
 .lock{max-width:420px;margin:120px auto;text-align:center}
 .lock input{text-align:center}
 .hidden{display:none}
+.hp-field{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0}
 </style>
 </head>
 <body>
@@ -54,6 +55,9 @@ input,select,textarea{width:100%;margin-top:6px;border:1px solid #ddd0cc;border-
     <h2>Add a new Instagram / TikTok video</h2>
     <p class="hint">Paste a link to a video you just posted. It'll show up in the "Fresh off Instagram & TikTok" section on your website automatically.</p>
     <form id="content-form">
+      <div class="hp-field" aria-hidden="true">
+        <label>Company<input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+      </div>
       <label>Platform
         <select name="platform">
           <option value="instagram">Instagram</option>
@@ -75,6 +79,7 @@ input,select,textarea{width:100%;margin-top:6px;border:1px solid #ddd0cc;border-
 
 <script src="assets/config.js"></script>
 <script>
+const PAGE_LOADED_AT = Date.now();
 const lockScreen = document.getElementById("lock-screen");
 const dashboard = document.getElementById("dashboard");
 const lockStatus = document.getElementById("lock-status");
@@ -126,6 +131,8 @@ document.getElementById("content-form").addEventListener("submit", async (e) => 
     url: fd.get("url"),
     caption: fd.get("caption"),
     submittedAt: new Date().toISOString(),
+    hp: fd.get("company"),
+    loadedAt: PAGE_LOADED_AT,
   };
   try {
     await fetch(APPS_SCRIPT_URL, {

@@ -1,6 +1,8 @@
 // Shared front-end logic for the public site (packages, booking form, content feed).
 // Relies on constants defined in config.js, loaded before this file.
 
+const PAGE_LOADED_AT = Date.now();
+
 function backendReady() {
   return typeof APPS_SCRIPT_URL === "string" && APPS_SCRIPT_URL.trim().length > 0;
 }
@@ -87,6 +89,8 @@ function initBookingForm() {
       services: fd.get("services"),
       message: fd.get("message"),
       submittedAt: new Date().toISOString(),
+      hp: fd.get("company"),
+      loadedAt: PAGE_LOADED_AT,
     };
 
     const submitBtn = form.querySelector('button[type="submit"]');

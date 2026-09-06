@@ -15,7 +15,11 @@
 // ---- EDIT THESE -------------------------------------------------------
 
 // Must exactly match SHARED_TOKEN in assets/config.js.
-const SHARED_TOKEN = "andrea-cambia-esto-2026";
+const SHARED_TOKEN = "AndreaGlam2026";
+
+// Basic spam protection: caps how many submissions of one action type
+// (booking or content) can go through per minute, across all visitors.
+const MAX_SUBMISSIONS_PER_MINUTE = 20;
 
 // Who gets an email every time someone submits a booking request.
 const NOTIFY_EMAILS = ["js202189@gmail.com", "Andreabencomo0907@icloud.com"];
@@ -46,6 +50,22 @@ function doPost(e) {
 
   if (data.token !== SHARED_TOKEN) {
     return jsonOutput({ ok: false, error: "Invalid token" });
+  }
+
+  // Honeypot: a hidden field real visitors never see or fill in. Bots that
+  // blindly fill every field trip this. Pretend success so they move on.
+  if (data.hp) {
+    return jsonOutput({ ok: true });
+  }
+
+  // Bot-speed check: the form records when it loaded; a real person takes
+  // at least ~1.2s to fill it out. Also pretend success here.
+  if (data.loadedAt && Date.now() - Number(data.loadedAt) < 1200) {
+    return jsonOutput({ ok: true });
+  }
+
+  if (isRateLimited(data.action)) {
+    return jsonOutput({ ok: false, error: "Too many submissions right now — please try again in a minute." });
   }
 
   if (data.action === "booking") {
@@ -149,6 +169,16 @@ function sendBookingEmail(data) {
   ].join("\n");
 
   MailApp.sendEmail(NOTIFY_EMAILS.join(","), subject, body);
+}
+
+function isRateLimited(action) {
+  const cache = CacheService.getScriptCache();
+  const bucket = Math.floor(Date.now() / 60000); // one-minute window
+  const key = `rl_${action}_${bucket}`;
+  const current = Number(cache.get(key) || 0);
+  if (current >= MAX_SUBMISSIONS_PER_MINUTE) return true;
+  cache.put(key, String(current + 1), 90);
+  return false;
 }
 
 function extractNumber(priceStr) {
