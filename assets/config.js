@@ -67,6 +67,20 @@ const PACKAGES = [
     description: "The full quinceañera experience: professional hair & makeup techniques, lashes, a curated touch-up kit, and a personalized trial one month before your big day. Extensions application +$20.",
   },
   {
+    id: "quince-basic",
+    name: "Basic Quinceañera Package",
+    price: "$285+",
+    tagline: "Budget-friendly, no trial",
+    description: "Hair & makeup using a blend of modern and timeless techniques, high-quality products, and a look designed to last 8+ hours. Includes a complimentary touch-up kit and a pre-event consultation via message. Does not include a hair & makeup trial.",
+  },
+  {
+    id: "photo-session",
+    name: "Pre-Quinceañera Photo Session",
+    price: "$285+",
+    tagline: "A separate day before the big day",
+    description: "Customized hairstyle and long-lasting makeup for your pre-quinceañera photo session, plus false lash application and a consultation to coordinate the look with your dress and style. Booked as a separate date/reservation from the quinceañera day.",
+  },
+  {
     id: "bridal",
     name: "Bridal Package",
     price: "$420+",
@@ -79,6 +93,13 @@ const PACKAGES = [
     price: "$150+ / person",
     tagline: "Book alongside a Bridal Package",
     description: "Additional hair & makeup for bridesmaids, mothers, or family — booked together with a Bridal Package.",
+  },
+  {
+    id: "family-package",
+    name: "Family Package",
+    price: "$195+",
+    tagline: "Soft glam for family & guests",
+    description: "Soft glam hair & makeup for family members and guests, tailored to each person's style and designed to stay fresh for 8+ hours — so everyone celebrates looking their best.",
   },
   {
     id: "custom-group",
