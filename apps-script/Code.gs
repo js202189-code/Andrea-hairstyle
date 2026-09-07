@@ -90,14 +90,20 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  let result;
   if (e.parameter.action === "content") {
-    return jsonOutput(getActiveContent());
-  }
-  if (e.parameter.action === "checkAvailability") {
+    result = getActiveContent();
+  } else if (e.parameter.action === "checkAvailability") {
     const check = checkBookingRules(e.parameter.date, e.parameter.time, e.parameter.plan);
-    return jsonOutput({ available: !check.blocked, reason: check.reason || "" });
+    result = { available: !check.blocked, reason: check.reason || "" };
+  } else {
+    result = { ok: true, message: "Andrea Bencomo booking backend is running." };
   }
-  return jsonOutput({ ok: true, message: "Andrea Bencomo booking backend is running." });
+  // Browsers reading a Web App's GET response cross-origin (real fetch,
+  // not no-cors) is unreliable in practice. JSONP sidesteps that entirely
+  // by returning JS that calls back into a <script> tag instead of JSON
+  // read via fetch — used whenever the caller passes ?callback=...
+  return jsonOutput(result, e.parameter.callback);
 }
 
 function handleBooking(data) {
@@ -294,8 +300,12 @@ function ensureSheet(name, headers) {
   return sheet;
 }
 
-function jsonOutput(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+function jsonOutput(obj, callback) {
+  const json = JSON.stringify(obj);
+  if (callback) {
+    return ContentService.createTextOutput(`${callback}(${json})`).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
 }
 
 /**

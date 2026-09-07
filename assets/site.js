@@ -7,6 +7,46 @@ function backendReady() {
   return typeof APPS_SCRIPT_URL === "string" && APPS_SCRIPT_URL.trim().length > 0;
 }
 
+// Reading a GET response from Apps Script via a real cross-origin fetch()
+// is unreliable in practice on a real domain (the browser can block it
+// even though it worked in local testing). JSONP sidesteps that entirely:
+// a <script> tag isn't subject to CORS, so the server just returns
+// JS that calls straight into our callback instead of a JSON body we'd
+// have to read via fetch.
+let jsonpCounter = 0;
+function jsonpRequest(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `__jsonp_cb_${Date.now()}_${jsonpCounter++}`;
+    const script = document.createElement("script");
+    let settled = false;
+
+    const cleanup = () => {
+      delete window[callbackName];
+      script.remove();
+    };
+    window[callbackName] = (data) => {
+      settled = true;
+      cleanup();
+      resolve(data);
+    };
+    script.onerror = () => {
+      if (!settled) {
+        cleanup();
+        reject(new Error("JSONP request failed"));
+      }
+    };
+    script.src = `${url}${url.includes("?") ? "&" : "?"}callback=${callbackName}`;
+    document.body.appendChild(script);
+
+    setTimeout(() => {
+      if (!settled) {
+        cleanup();
+        reject(new Error("JSONP request timed out"));
+      }
+    }, 8000);
+  });
+}
+
 // ---- Pricing / package cards -----------------------------------------------
 
 function renderPackages() {
@@ -69,9 +109,7 @@ async function checkAvailability(date, time, planName) {
     const params = new URLSearchParams({ action: "checkAvailability", date });
     if (time) params.set("time", time);
     if (planName) params.set("plan", planName);
-    const res = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
-    if (!res.ok) return { available: true };
-    const data = await res.json();
+    const data = await jsonpRequest(`${APPS_SCRIPT_URL}?${params.toString()}`);
     return { available: data.available !== false, reason: data.reason || "" };
   } catch (err) {
     return { available: true }; // don't block the user if the check itself fails
@@ -185,9 +223,7 @@ async function loadContentFeed() {
   if (!wrap || !backendReady()) return;
 
   try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=content`);
-    if (!res.ok) return;
-    const items = await res.json();
+    const items = await jsonpRequest(`${APPS_SCRIPT_URL}?action=content`);
     if (!Array.isArray(items) || items.length === 0) return;
 
     wrap.innerHTML = items.slice(0, 6).map(item => `
