@@ -28,11 +28,17 @@ const NOTIFY_EMAILS = ["js202189@gmail.com", "Andreabencomo0907@icloud.com"];
 // of whichever Google account this script is deployed under (Andrea's).
 const CALENDAR_ID = "primary";
 
-// Minimum gap required between two appointments, in hours. Set to 0 for
-// now (only blocks an exact same date+time match) — a good next step is
-// making this vary per package (e.g. a Bridal Package needs a longer gap
-// than a solo Hair/Makeup Only booking).
-const BOOKING_BUFFER_HOURS = 0;
+// Scheduling rules:
+//  - No bookings at all on Sundays, for any plan.
+//  - The solo "Hair or Makeup Only" plan can have multiple bookings per
+//    day, but needs at least SOLO_BUFFER_HOURS between them.
+//  - Every other plan (Signature Duo, Quinceañera, Bridal, Bridal Party
+//    Add-On, Custom/Large Group) is limited to ONE such booking per day,
+//    regardless of time — these are treated as taking up the whole day.
+// SOLO_PLAN_NAME must exactly match that package's `name` in
+// assets/config.js (PACKAGES).
+const SOLO_PLAN_NAME = "Hair or Makeup Only";
+const SOLO_BUFFER_HOURS = 3;
 
 // ------------------------------------------------------------------------
 
@@ -88,8 +94,8 @@ function doGet(e) {
     return jsonOutput(getActiveContent());
   }
   if (e.parameter.action === "checkAvailability") {
-    const taken = isSlotTaken(e.parameter.date, e.parameter.time);
-    return jsonOutput({ available: !taken });
+    const check = checkBookingRules(e.parameter.date, e.parameter.time, e.parameter.plan);
+    return jsonOutput({ available: !check.blocked, reason: check.reason || "" });
   }
   return jsonOutput({ ok: true, message: "Andrea Bencomo booking backend is running." });
 }
@@ -97,7 +103,8 @@ function doGet(e) {
 function handleBooking(data) {
   const sheet = ensureSheet(BOOKINGS_SHEET, BOOKINGS_HEADERS);
   const priceNumeric = extractNumber(data.price);
-  const conflict = isSlotTaken(data.date, data.time, sheet);
+  const check = checkBookingRules(data.date, data.time, data.plan, sheet);
+  const conflict = check.blocked;
 
   sheet.appendRow([
     new Date(),
@@ -111,39 +118,73 @@ function handleBooking(data) {
     priceNumeric,
     data.services || "",
     data.message || "",
-    conflict ? "CONFLICT — double-booked, contact client" : "New",
+    conflict ? `CONFLICT — ${check.reason}` : "New",
   ]);
 
   createCalendarEvent(data, conflict);
-  sendBookingEmail(data, conflict);
+  sendBookingEmail(data, conflict, check.reason);
 
-  return jsonOutput({ ok: true, conflict });
+  return jsonOutput({ ok: true, conflict, reason: check.reason || "" });
 }
 
 /**
- * True if `dateStr`/`timeStr` falls within BOOKING_BUFFER_HOURS of an
- * existing booking. Used both for the website's live availability check
- * (doGet ?action=checkAvailability) and as a server-side safety net at
- * submit time, in case two people submit around the same moment.
+ * Applies the scheduling rules described above. Used both for the
+ * website's live availability check (doGet ?action=checkAvailability)
+ * and as a server-side safety net at submit time, in case two people
+ * submit around the same moment. Returns { blocked, reason }.
  */
-function isSlotTaken(dateStr, timeStr, sheet) {
-  if (!dateStr || !timeStr) return false; // can't check without both
-  const requested = new Date(`${dateStr}T${timeStr}:00`);
-  if (isNaN(requested.getTime())) return false;
+function checkBookingRules(dateStr, timeStr, planName, sheet) {
+  if (!dateStr) return { blocked: false };
+
+  const requestedDate = new Date(`${dateStr}T00:00:00`);
+  if (isNaN(requestedDate.getTime())) return { blocked: false };
+
+  if (requestedDate.getDay() === 0) {
+    return { blocked: true, reason: "Sundays are not available for booking. Please choose a different day." };
+  }
 
   const bookingsSheet = sheet || ensureSheet(BOOKINGS_SHEET, BOOKINGS_HEADERS);
   const rows = bookingsSheet.getDataRange().getValues();
   rows.shift(); // headers
-  const bufferMs = BOOKING_BUFFER_HOURS * 60 * 60 * 1000;
 
-  return rows.some(row => {
-    const rowDate = row[3]; // Event Date
-    const rowTime = row[4]; // Time
-    if (!rowDate || !rowTime) return false;
-    const existing = new Date(`${rowDate}T${rowTime}:00`);
-    if (isNaN(existing.getTime())) return false;
-    return Math.abs(existing.getTime() - requested.getTime()) < bufferMs;
+  const isSolo = planName === SOLO_PLAN_NAME;
+
+  if (isSolo) {
+    if (!timeStr) return { blocked: false }; // can't check the buffer without a time
+    const requested = new Date(`${dateStr}T${timeStr}:00`);
+    if (isNaN(requested.getTime())) return { blocked: false };
+    const bufferMs = SOLO_BUFFER_HOURS * 60 * 60 * 1000;
+
+    const tooClose = rows.some(row => {
+      const rowDate = row[3], rowTime = row[4], rowPlan = row[6];
+      if (rowPlan !== SOLO_PLAN_NAME || !rowDate || !rowTime) return false;
+      const existing = new Date(`${rowDate}T${rowTime}:00`);
+      if (isNaN(existing.getTime())) return false;
+      return Math.abs(existing.getTime() - requested.getTime()) < bufferMs;
+    });
+
+    if (tooClose) {
+      return {
+        blocked: true,
+        reason: `That time is too close to another Hair or Makeup Only appointment. Andrea needs at least ${SOLO_BUFFER_HOURS} hours between these — please choose a different time.`,
+      };
+    }
+    return { blocked: false };
+  }
+
+  // Every other plan: only one such booking allowed per day.
+  const dayTaken = rows.some(row => {
+    const rowDate = row[3], rowPlan = row[6];
+    return rowDate === dateStr && rowPlan && rowPlan !== SOLO_PLAN_NAME;
   });
+
+  if (dayTaken) {
+    return {
+      blocked: true,
+      reason: "That date is already booked for a full appointment. Only one Quinceañera/Bridal/Party-size booking is available per day — please choose a different date.",
+    };
+  }
+  return { blocked: false };
 }
 
 function handleContent(data) {
@@ -166,7 +207,7 @@ function createCalendarEvent(data, conflict) {
   if (!data.date) return; // no date given, skip calendar
   try {
     const calendar = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
-    const title = `${conflict ? "⚠️ DOUBLE-BOOKED — " : ""}${data.eventType || "Booking"} — ${data.name || "Client"}`;
+    const title = `${conflict ? "⚠️ NEEDS ATTENTION — " : ""}${data.eventType || "Booking"} — ${data.name || "Client"}`;
     const description = [
       `Plan: ${data.plan || ""} (${data.price || ""})`,
       `Contact: ${data.contact || ""}`,
@@ -187,12 +228,12 @@ function createCalendarEvent(data, conflict) {
   }
 }
 
-function sendBookingEmail(data, conflict) {
+function sendBookingEmail(data, conflict, reason) {
   if (!NOTIFY_EMAILS || NOTIFY_EMAILS.length === 0) return;
-  const subject = `${conflict ? "⚠️ DOUBLE-BOOKED — " : ""}New booking request: ${data.name || "Someone"} (${data.plan || ""})`;
+  const subject = `${conflict ? "⚠️ NEEDS ATTENTION — " : ""}New booking request: ${data.name || "Someone"} (${data.plan || ""})`;
   const body = [
     conflict
-      ? `⚠️ This conflicts with another booking${BOOKING_BUFFER_HOURS > 0 ? ` (within ${BOOKING_BUFFER_HOURS} hours)` : ""} — please contact the client to reschedule.\n`
+      ? `⚠️ ${reason || "This booking conflicts with the scheduling rules"} — please contact the client to reschedule or confirm.\n`
       : ``,
     `New booking request from the website:`,
     ``,
@@ -244,9 +285,10 @@ function ensureSheet(name, headers) {
   }
   if (name === BOOKINGS_SHEET) {
     // Keep Event Date (D) and Time (E) as plain text so Sheets never
-    // auto-converts them — isSlotTaken() depends on reading back the
-    // exact "YYYY-MM-DD"/"HH:MM" strings that were written. Applied every
-    // call (not just on creation) so it also fixes a sheet made earlier.
+    // auto-converts them — checkBookingRules() depends on reading back
+    // the exact "YYYY-MM-DD"/"HH:MM" strings that were written. Applied
+    // every call (not just on creation) so it also fixes a sheet made
+    // earlier.
     sheet.getRange("D:E").setNumberFormat("@");
   }
   return sheet;

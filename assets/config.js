@@ -13,11 +13,13 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyT4ACD43yjJ2-_
 // the SHARED_TOKEN constant in apps-script/Code.gs.
 const SHARED_TOKEN = "AndreaGlam2026";
 
-// Minimum gap required between two appointments, in hours. Must match
-// BOOKING_BUFFER_HOURS in apps-script/Code.gs. Set to 0 for now (only
-// blocks an exact same date+time match) — a good next step is making
-// this vary per package (assets/config.js PACKAGES array).
-const BOOKING_BUFFER_HOURS = 0;
+// Scheduling rules (must match apps-script/Code.gs):
+//  - No bookings on Sundays, for any plan.
+//  - SOLO_PLAN_NAME can have multiple bookings per day, but needs at
+//    least SOLO_BUFFER_HOURS between them.
+//  - Every other plan is limited to one booking per day.
+const SOLO_PLAN_NAME = "Hair or Makeup Only";
+const SOLO_BUFFER_HOURS = 3;
 
 // Links shown on the admin dashboard (admin.html) for quick access.
 // Fill these in once you've created the Google Sheet / Calendar.

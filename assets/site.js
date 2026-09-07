@@ -32,7 +32,10 @@ function renderPackages() {
     input.addEventListener("change", () => {
       grid.querySelectorAll(".pkg-card").forEach(card => card.classList.remove("selected"));
       input.closest(".pkg-card").classList.add("selected");
-      if (select) select.value = input.value;
+      if (select) {
+        select.value = input.value;
+        select.dispatchEvent(new Event("change"));
+      }
     });
   });
   const firstCard = grid.querySelector(".pkg-card");
@@ -60,21 +63,18 @@ function selectPackageById(id) {
 
 // ---- Booking form ------------------------------------------------------
 
-function timeTakenMessage() {
-  return BOOKING_BUFFER_HOURS > 0
-    ? `That time has already been booked. Please choose a different time — Andrea needs at least ${BOOKING_BUFFER_HOURS} hours between appointments.`
-    : "That time has already been booked. Please choose a different time.";
-}
-
-async function checkAvailability(date, time) {
-  if (!backendReady() || !date || !time) return true; // can't check, don't block
+async function checkAvailability(date, time, planName) {
+  if (!backendReady() || !date) return { available: true };
   try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=checkAvailability&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`);
-    if (!res.ok) return true;
+    const params = new URLSearchParams({ action: "checkAvailability", date });
+    if (time) params.set("time", time);
+    if (planName) params.set("plan", planName);
+    const res = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
+    if (!res.ok) return { available: true };
     const data = await res.json();
-    return data.available !== false;
+    return { available: data.available !== false, reason: data.reason || "" };
   } catch (err) {
-    return true; // don't block the user if the check itself fails
+    return { available: true }; // don't block the user if the check itself fails
   }
 }
 
@@ -85,19 +85,24 @@ function initBookingForm() {
   const availabilityEl = document.getElementById("availability-status");
   const dateInput = form.querySelector('input[name="date"]');
   const timeInput = form.querySelector('input[name="time"]');
+  const planSelect = form.querySelector("#plan-select");
+
+  function getSelectedPlanName() {
+    const pkg = PACKAGES.find(p => p.id === planSelect?.value);
+    return pkg ? pkg.name : (planSelect?.value || "");
+  }
 
   async function updateAvailability() {
     const date = dateInput.value;
-    const time = timeInput.value;
-    if (!date || !time || !availabilityEl) {
+    if (!date || !availabilityEl) {
       if (availabilityEl) availabilityEl.textContent = "";
       return;
     }
     availabilityEl.textContent = "Checking availability...";
     availabilityEl.className = "form-status";
-    const available = await checkAvailability(date, time);
-    if (!available) {
-      availabilityEl.textContent = timeTakenMessage();
+    const result = await checkAvailability(date, timeInput.value, getSelectedPlanName());
+    if (!result.available) {
+      availabilityEl.textContent = result.reason || "That date/time isn't available. Please choose a different one.";
       availabilityEl.className = "form-status form-status-warn";
     } else {
       availabilityEl.textContent = "";
@@ -106,6 +111,7 @@ function initBookingForm() {
   }
   dateInput?.addEventListener("change", updateAvailability);
   timeInput?.addEventListener("change", updateAvailability);
+  planSelect?.addEventListener("change", updateAvailability);
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -117,15 +123,16 @@ function initBookingForm() {
     }
 
     const fd = new FormData(form);
+    const pkg = PACKAGES.find(p => p.id === fd.get("plan"));
+    const planName = pkg ? pkg.name : fd.get("plan");
 
-    const available = await checkAvailability(fd.get("date"), fd.get("time"));
-    if (!available) {
-      statusEl.textContent = timeTakenMessage();
+    const result = await checkAvailability(fd.get("date"), fd.get("time"), planName);
+    if (!result.available) {
+      statusEl.textContent = result.reason || "That date/time isn't available. Please choose a different one.";
       statusEl.className = "form-status form-status-warn";
       return;
     }
 
-    const pkg = PACKAGES.find(p => p.id === fd.get("plan"));
     const payload = {
       action: "booking",
       token: SHARED_TOKEN,
@@ -134,7 +141,7 @@ function initBookingForm() {
       date: fd.get("date"),
       time: fd.get("time"),
       eventType: fd.get("event"),
-      plan: pkg ? pkg.name : fd.get("plan"),
+      plan: planName,
       price: pkg ? pkg.price : "",
       services: fd.get("services"),
       message: fd.get("message"),
