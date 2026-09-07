@@ -135,6 +135,7 @@ textarea{min-height:120px;resize:vertical}
       <a href="#pricing">Pricing</a>
       <a href="#portfolio">Portfolio</a>
       <a href="#about">Why Andrea</a>
+      <a href="#meet-andrea">Meet Andrea</a>
       <a href="#book">Book</a>
     </div>
   </div>
@@ -163,6 +164,19 @@ textarea{min-height:120px;resize:vertical}
     </div>
   </div>
   <img class="feature-img" src="assets/images/bridal-hair-makeup.jpg" alt="Andrea styling a bridal client at home">
+</div>
+</section>
+
+<section id="meet-andrea">
+<div class="container split">
+  <img class="feature-img" style="aspect-ratio:2/3" src="assets/images/andrea-portrait.jpg" alt="Andrea Bencomo">
+  <div>
+    <div class="section-kicker">Meet your artist</div>
+    <h2 class="section-title">About Andrea</h2>
+    <p class="intro">Hello, my name is Andrea.</p>
+    <p class="intro">I am a Licensed cosmetologist &amp; a professional certified quinceañera makeup artist and hairstylist with over 8 years of experience. I specialize in creating timeless, elegant looks for quinceañeras on one of the most meaningful days of their lives. My focus is to enhance your natural beauty while ensuring you feel confident, radiant, and camera-ready from your grand entrance to the last dance.</p>
+    <p class="intro">I work with high-quality products, modern techniques, and personalized attention to bring your dream look to life. I'll help you achieve the perfect look for your special day!</p>
+  </div>
 </div>
 </section>
 
@@ -239,7 +253,7 @@ textarea{min-height:120px;resize:vertical}
 <div class="container">
   <div class="section-kicker">Investment</div>
   <h2 class="section-title">Pick the plan that fits your event.</h2>
-  <p class="intro">Select a package below to start your booking request — Andrea will confirm final pricing based on your details.</p>
+  <p class="intro">Select one or more packages below to start your booking request — you can combine plans (e.g. a Bridal Package plus a Bridal Party Add-On) — and Andrea will confirm final pricing based on your details.</p>
   <div class="pkg-grid" id="packages-grid"></div>
   <p class="small" style="margin-top:20px">Displayed pricing is approximate based on the information provided and should be confirmed directly with Andrea before booking.</p>
 </div>
@@ -256,9 +270,8 @@ textarea{min-height:120px;resize:vertical}
         <label>Company<input type="text" name="company" tabindex="-1" autocomplete="off"></label>
       </div>
       <div class="full">
-        <label>Plan
-          <select id="plan-select" name="plan"></select>
-        </label>
+        <label>Selected plan(s)</label>
+        <div class="small" id="selected-plans-summary">No plan selected yet — pick one or more in the Pricing section above.</div>
       </div>
       <div><label>Name<input required name="name" placeholder="Your name"></label></div>
       <div><label>Phone or email<input required name="contact" placeholder="Best way to reach you"></label></div>

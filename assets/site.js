@@ -48,15 +48,37 @@ function jsonpRequest(url) {
 }
 
 // ---- Pricing / package cards -----------------------------------------------
+// Packages are multi-select: a client can combine plans (e.g. a Bridal
+// Package plus a Bridal Party Add-On) by checking more than one card.
+
+function getSelectedPackages() {
+  return PACKAGES.filter(pkg => document.getElementById(`pkg-${pkg.id}`)?.checked);
+}
+
+// Combines however many packages are selected into one display name and
+// one price: if every selected price is a plain "$NNN+"-style number, add
+// them up into a single estimate; otherwise (e.g. "Let's talk" is in the
+// mix) fall back to asking Andrea for a custom quote.
+function combineSelectedPackages(selected) {
+  if (selected.length === 0) return { name: "", price: "" };
+  const name = selected.map(p => p.name).join(" + ");
+  const numbers = selected.map(p => {
+    const m = String(p.price).match(/\d+/);
+    return m ? Number(m[0]) : null;
+  });
+  const price = numbers.every(n => n !== null)
+    ? `$${numbers.reduce((a, b) => a + b, 0)}+ combined`
+    : "Custom quote (multiple services selected)";
+  return { name, price };
+}
 
 function renderPackages() {
   const grid = document.getElementById("packages-grid");
-  const select = document.getElementById("plan-select");
   if (!grid) return;
 
-  grid.innerHTML = PACKAGES.map((pkg, i) => `
+  grid.innerHTML = PACKAGES.map(pkg => `
     <label class="pkg-card" for="pkg-${pkg.id}">
-      <input type="radio" name="pkg-radio" id="pkg-${pkg.id}" value="${pkg.id}" ${i === 0 ? "checked" : ""}>
+      <input type="checkbox" name="pkg-checkbox" id="pkg-${pkg.id}" value="${pkg.id}">
       <div class="pkg-name">${pkg.name}</div>
       <div class="pkg-price">${pkg.price}</div>
       <div class="pkg-tagline">${pkg.tagline}</div>
@@ -64,39 +86,19 @@ function renderPackages() {
     </label>
   `).join("");
 
-  if (select) {
-    select.innerHTML = PACKAGES.map(pkg => `<option value="${pkg.id}">${pkg.name} — ${pkg.price}</option>`).join("");
-  }
-
-  grid.querySelectorAll('input[name="pkg-radio"]').forEach(input => {
+  grid.querySelectorAll('input[name="pkg-checkbox"]').forEach(input => {
     input.addEventListener("change", () => {
-      grid.querySelectorAll(".pkg-card").forEach(card => card.classList.remove("selected"));
-      input.closest(".pkg-card").classList.add("selected");
-      if (select) {
-        select.value = input.value;
-        select.dispatchEvent(new Event("change"));
-      }
+      input.closest(".pkg-card").classList.toggle("selected", input.checked);
+      grid.dispatchEvent(new Event("selectionchange"));
     });
   });
-  const firstCard = grid.querySelector(".pkg-card");
-  if (firstCard) firstCard.classList.add("selected");
-
-  if (select) {
-    select.addEventListener("change", () => {
-      const radio = document.getElementById(`pkg-${select.value}`);
-      if (radio) radio.checked = true;
-      grid.querySelectorAll(".pkg-card").forEach(card => card.classList.remove("selected"));
-      const card = grid.querySelector(`#pkg-${select.value}`)?.closest(".pkg-card");
-      if (card) card.classList.add("selected");
-    });
-  }
 }
 
 function selectPackageById(id) {
-  const radio = document.getElementById(`pkg-${id}`);
-  if (radio) {
-    radio.checked = true;
-    radio.dispatchEvent(new Event("change"));
+  const checkbox = document.getElementById(`pkg-${id}`);
+  if (checkbox) {
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event("change"));
     document.getElementById("book")?.scrollIntoView({ behavior: "smooth" });
   }
 }
@@ -121,14 +123,26 @@ function initBookingForm() {
   if (!form) return;
   const statusEl = document.getElementById("booking-status");
   const availabilityEl = document.getElementById("availability-status");
+  const summaryEl = document.getElementById("selected-plans-summary");
   const dateInput = form.querySelector('input[name="date"]');
   const timeInput = form.querySelector('input[name="time"]');
-  const planSelect = form.querySelector("#plan-select");
+  const packagesGrid = document.getElementById("packages-grid");
 
-  function getSelectedPlanName() {
-    const pkg = PACKAGES.find(p => p.id === planSelect?.value);
-    return pkg ? pkg.name : (planSelect?.value || "");
+  function updateSummary() {
+    if (!summaryEl) return;
+    const selected = getSelectedPackages();
+    if (selected.length === 0) {
+      summaryEl.textContent = "No plan selected yet — pick one or more in the Pricing section above.";
+      return;
+    }
+    const { name, price } = combineSelectedPackages(selected);
+    summaryEl.textContent = `${name} — ${price}`;
   }
+  packagesGrid?.addEventListener("selectionchange", () => {
+    updateSummary();
+    updateAvailability();
+  });
+  updateSummary();
 
   async function updateAvailability() {
     const date = dateInput.value;
@@ -138,7 +152,8 @@ function initBookingForm() {
     }
     availabilityEl.textContent = "Checking availability...";
     availabilityEl.className = "form-status";
-    const result = await checkAvailability(date, timeInput.value, getSelectedPlanName());
+    const { name } = combineSelectedPackages(getSelectedPackages());
+    const result = await checkAvailability(date, timeInput.value, name);
     if (!result.available) {
       availabilityEl.textContent = result.reason || "That date/time isn't available. Please choose a different one.";
       availabilityEl.className = "form-status form-status-warn";
@@ -149,7 +164,6 @@ function initBookingForm() {
   }
   dateInput?.addEventListener("change", updateAvailability);
   timeInput?.addEventListener("change", updateAvailability);
-  planSelect?.addEventListener("change", updateAvailability);
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -160,9 +174,15 @@ function initBookingForm() {
       return;
     }
 
+    const selected = getSelectedPackages();
+    if (selected.length === 0) {
+      statusEl.textContent = "Please select at least one plan above before booking.";
+      statusEl.className = "form-status form-status-warn";
+      return;
+    }
+    const { name: planName, price: planPrice } = combineSelectedPackages(selected);
+
     const fd = new FormData(form);
-    const pkg = PACKAGES.find(p => p.id === fd.get("plan"));
-    const planName = pkg ? pkg.name : fd.get("plan");
 
     const result = await checkAvailability(fd.get("date"), fd.get("time"), planName);
     if (!result.available) {
@@ -180,7 +200,7 @@ function initBookingForm() {
       time: fd.get("time"),
       eventType: fd.get("event"),
       plan: planName,
-      price: pkg ? pkg.price : "",
+      price: planPrice,
       services: fd.get("services"),
       message: fd.get("message"),
       submittedAt: new Date().toISOString(),
@@ -206,6 +226,7 @@ function initBookingForm() {
       statusEl.className = "form-status form-status-ok";
       form.reset();
       renderPackages();
+      updateSummary();
     } catch (err) {
       statusEl.textContent = "Something went wrong sending your request. Please try again or reach out on Instagram/TikTok.";
       statusEl.className = "form-status form-status-warn";

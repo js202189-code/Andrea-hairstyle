@@ -60,6 +60,13 @@ const PACKAGES = [
     description: "Complete hair & makeup for the quinceañera, styled to last through the celebration and photos.",
   },
   {
+    id: "quince-signature",
+    name: "Signature Quinceañera Experience",
+    price: "$425+",
+    tagline: "Includes a hair & makeup trial",
+    description: "The full quinceañera experience: professional hair & makeup techniques, lashes, a curated touch-up kit, and a personalized trial one month before your big day. Extensions application +$20.",
+  },
+  {
     id: "bridal",
     name: "Bridal Package",
     price: "$420+",
