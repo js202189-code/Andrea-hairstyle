@@ -268,36 +268,7 @@ textarea{min-height:120px;resize:vertical}
 </div>
 </section>
 
-<section id="book" class="band">
-<div class="container">
-  <div class="section-kicker">Let's get you booked</div>
-  <h2 class="section-title">Tell Andrea about your event.</h2>
-  <p class="intro">Choose your plan, share your event details, and Andrea will follow up to confirm.</p>
-  <div class="booking">
-    <form id="booking-form">
-      <div class="hp-field" aria-hidden="true">
-        <label>Company<input type="text" name="company" tabindex="-1" autocomplete="off"></label>
-      </div>
-      <div class="full">
-        <label>Selected plan(s)</label>
-        <div class="small" id="selected-plans-summary">No plan selected yet — pick one or more in the Pricing section above.</div>
-      </div>
-      <div><label>Name<input required name="name" placeholder="Your name"></label></div>
-      <div><label>Phone or email<input required name="contact" placeholder="Best way to reach you"></label></div>
-      <div><label>Event date<input required type="date" name="date"></label></div>
-      <div><label>Preferred time<input required type="time" name="time"></label></div>
-      <div class="full form-status" id="availability-status"></div>
-      <div class="full"><label>Event type<select name="event"><option>Quinceañera</option><option>Wedding / Bridal</option><option>Prom</option><option>Party / Special Event</option><option>Photoshoot</option><option>Other</option></select></label></div>
-      <div class="full"><label>What services do you need?<input name="services" placeholder="Hair, makeup, or both"></label></div>
-      <div class="full"><label>Tell Andrea about your vision<textarea name="message" placeholder="Location, number of people, inspiration, and anything else that would help."></textarea></label></div>
-      <div class="full"><button class="btn btn-dark" type="submit">Send Booking Request</button></div>
-      <div class="full form-status" id="booking-status"></div>
-    </form>
-  </div>
-</div>
-</section>
-
-<section>
+<section class="band">
 <div class="container">
   <div class="cta">
     <div>
@@ -312,7 +283,7 @@ textarea{min-height:120px;resize:vertical}
 </div>
 </section>
 
-<section class="band" id="booking-info">
+<section id="booking-info">
 <div class="container">
   <div class="section-kicker">Locking in your date</div>
   <h2 class="section-title">Booking & Fees</h2>
@@ -344,7 +315,7 @@ textarea{min-height:120px;resize:vertical}
 </div>
 </section>
 
-<section id="policy">
+<section class="band" id="policy">
 <div class="container">
   <div class="section-kicker">Please read before booking</div>
   <h2 class="section-title">Cancellation Policy</h2>
@@ -357,6 +328,35 @@ textarea{min-height:120px;resize:vertical}
     <div class="feature"><div class="icon">06</div><div><p>In extraordinary, verifiable emergencies, rescheduling will be considered, always subject to availability.</p></div></div>
   </div>
   <p class="small" style="margin-top:24px">By submitting a deposit and confirming your appointment, you agree to all the policies listed above.</p>
+</div>
+</section>
+
+<section id="book">
+<div class="container">
+  <div class="section-kicker">Let's get you booked</div>
+  <h2 class="section-title">Tell Andrea about your event.</h2>
+  <p class="intro">Choose your plan, share your event details, and Andrea will follow up to confirm.</p>
+  <div class="booking">
+    <form id="booking-form">
+      <div class="hp-field" aria-hidden="true">
+        <label>Company<input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+      </div>
+      <div class="full">
+        <label>Selected plan(s)</label>
+        <div class="small" id="selected-plans-summary">No plan selected yet — pick one or more in the Pricing section above.</div>
+      </div>
+      <div><label>Name<input required name="name" placeholder="Your name"></label></div>
+      <div><label>Phone or email<input required name="contact" placeholder="Best way to reach you"></label></div>
+      <div><label>Event date<input required type="date" name="date"></label></div>
+      <div><label>Preferred time<input required type="time" name="time"></label></div>
+      <div class="full form-status" id="availability-status"></div>
+      <div class="full"><label>Event type<select name="event"><option>Quinceañera</option><option>Wedding / Bridal</option><option>Prom</option><option>Party / Special Event</option><option>Photoshoot</option><option>Other</option></select></label></div>
+      <div class="full"><label>What services do you need?<input name="services" placeholder="Hair, makeup, or both"></label></div>
+      <div class="full"><label>Tell Andrea about your vision<textarea name="message" placeholder="Location, number of people, inspiration, and anything else that would help."></textarea></label></div>
+      <div class="full"><button class="btn btn-dark" type="submit">Send Booking Request</button></div>
+      <div class="full form-status" id="booking-status"></div>
+    </form>
+  </div>
 </div>
 </section>
 
