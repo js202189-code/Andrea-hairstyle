@@ -70,11 +70,14 @@ section{padding:86px 0}
 .pkg-card{position:relative;display:block;background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;cursor:pointer;transition:.15s}
 .pkg-card:hover{border-color:var(--gold)}
 .pkg-card.selected{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset}
-.pkg-card input{position:absolute;top:18px;right:18px;margin:0;width:auto}
+.pkg-card>input[type="checkbox"]{position:absolute;top:18px;right:18px;margin:0;width:auto}
 .pkg-name{font-family:Georgia,serif;font-size:20px;padding-right:26px}
 .pkg-price{font-family:Georgia,serif;font-size:24px;color:var(--gold);margin:4px 0}
 .pkg-tagline{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
 .pkg-card p{color:var(--muted);font-size:14px;margin:10px 0 0}
+.pkg-qty{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:default}
+.pkg-qty span{font-size:13px;font-weight:700}
+.pkg-qty input{width:64px;padding:8px;border:1px solid #ddd0cc;border-radius:8px;font:inherit;text-align:center}
 .small{font-size:12px;color:var(--muted)}
 
 .cta{background:#211c1d;color:#fff;border-radius:28px;padding:60px;display:flex;justify-content:space-between;gap:40px;align-items:center}

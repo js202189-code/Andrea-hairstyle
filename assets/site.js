@@ -51,23 +51,38 @@ function jsonpRequest(url) {
 // Packages are multi-select: a client can combine plans (e.g. a Bridal
 // Package plus a Bridal Party Add-On) by checking more than one card.
 
+// Returns [{ pkg, qty }] for every checked package. `qty` is always 1 for
+// plans without a headcount; for plans with `quantity: true` it's read
+// from that card's number input (falling back to its minimum if blank).
 function getSelectedPackages() {
-  return PACKAGES.filter(pkg => document.getElementById(`pkg-${pkg.id}`)?.checked);
+  return PACKAGES
+    .filter(pkg => document.getElementById(`pkg-${pkg.id}`)?.checked)
+    .map(pkg => {
+      let qty = 1;
+      if (pkg.quantity) {
+        const parsed = parseInt(document.getElementById(`pkg-qty-${pkg.id}`)?.value, 10);
+        qty = Number.isFinite(parsed) && parsed > 0 ? parsed : (pkg.quantityMin || 1);
+      }
+      return { pkg, qty };
+    });
 }
 
 // Combines however many packages are selected into one display name and
 // one price: if every selected price is a plain "$NNN+"-style number, add
-// them up into a single estimate; otherwise (e.g. "Let's talk" is in the
-// mix) fall back to asking Andrea for a custom quote.
+// them up (multiplying per-person plans by their headcount) into a single
+// estimate; otherwise (e.g. "Let's talk" is in the mix) fall back to
+// asking Andrea for a custom quote.
 function combineSelectedPackages(selected) {
   if (selected.length === 0) return { name: "", price: "" };
-  const name = selected.map(p => p.name).join(" + ");
-  const numbers = selected.map(p => {
-    const m = String(p.price).match(/\d+/);
-    return m ? Number(m[0]) : null;
+  const lines = selected.map(({ pkg, qty }) => {
+    const label = pkg.quantity ? `${pkg.name} (${qty} ${qty === 1 ? "person" : "people"})` : pkg.name;
+    const m = String(pkg.price).match(/\d+/);
+    const unit = m ? Number(m[0]) : null;
+    return { label, lineTotal: unit !== null ? unit * qty : null };
   });
-  const price = numbers.every(n => n !== null)
-    ? `$${numbers.reduce((a, b) => a + b, 0)}+ combined`
+  const name = lines.map(l => l.label).join(" + ");
+  const price = lines.every(l => l.lineTotal !== null)
+    ? `$${lines.reduce((a, l) => a + l.lineTotal, 0)}+ combined`
     : "Custom quote (multiple services selected)";
   return { name, price };
 }
@@ -83,14 +98,26 @@ function renderPackages() {
       <div class="pkg-price">${pkg.price}</div>
       <div class="pkg-tagline">${pkg.tagline}</div>
       <p>${pkg.description}</p>
+      ${pkg.quantity ? `
+        <div class="pkg-qty" id="pkg-qty-wrap-${pkg.id}" style="display:none" onclick="event.preventDefault()">
+          <span>${pkg.quantityLabel || "Number of people"}</span>
+          <input type="number" min="${pkg.quantityMin || 1}" value="${pkg.quantityMin || 1}" id="pkg-qty-${pkg.id}">
+        </div>
+      ` : ""}
     </label>
   `).join("");
 
   grid.querySelectorAll('input[name="pkg-checkbox"]').forEach(input => {
     input.addEventListener("change", () => {
       input.closest(".pkg-card").classList.toggle("selected", input.checked);
+      const qtyWrap = document.getElementById(`pkg-qty-wrap-${input.value}`);
+      if (qtyWrap) qtyWrap.style.display = input.checked ? "block" : "none";
       grid.dispatchEvent(new Event("selectionchange"));
     });
+  });
+
+  grid.querySelectorAll('.pkg-qty input[type="number"]').forEach(input => {
+    input.addEventListener("input", () => grid.dispatchEvent(new Event("selectionchange")));
   });
 }
 

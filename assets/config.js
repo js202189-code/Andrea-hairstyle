@@ -53,13 +53,6 @@ const PACKAGES = [
     description: "Full hair and makeup for one person. Perfect for prom, parties, and special events.",
   },
   {
-    id: "quince",
-    name: "Quinceañera Package",
-    price: "$295+",
-    tagline: "The celebration look",
-    description: "Complete hair & makeup for the quinceañera, styled to last through the celebration and photos.",
-  },
-  {
     id: "quince-signature",
     name: "Signature Quinceañera Experience",
     price: "$425+",
@@ -93,6 +86,9 @@ const PACKAGES = [
     price: "$150+ / person",
     tagline: "Book alongside a Bridal Package",
     description: "Additional hair & makeup for bridesmaids, mothers, or family — booked together with a Bridal Package.",
+    quantity: true,
+    quantityMin: 1,
+    quantityLabel: "Number of people being added",
   },
   {
     id: "family-package",
@@ -100,6 +96,9 @@ const PACKAGES = [
     price: "$195+",
     tagline: "Soft glam for family & guests",
     description: "Soft glam hair & makeup for family members and guests, tailored to each person's style and designed to stay fresh for 8+ hours — so everyone celebrates looking their best.",
+    quantity: true,
+    quantityMin: 1,
+    quantityLabel: "Number of people in this package",
   },
   {
     id: "custom-group",
@@ -107,5 +106,8 @@ const PACKAGES = [
     price: "Let's talk",
     tagline: "3+ people or multi-day events",
     description: "Weddings with a full court, large quinceañera parties, or multi-day events — tell Andrea the details for a custom quote.",
+    quantity: true,
+    quantityMin: 3,
+    quantityLabel: "Number of people in this package",
   },
 ];
