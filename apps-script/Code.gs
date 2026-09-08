@@ -40,6 +40,11 @@ const CALENDAR_ID = "primary";
 const SOLO_PLAN_NAME = "Hair or Makeup Only";
 const SOLO_BUFFER_HOURS = 3;
 
+// Google Drive folder inspiration photos get saved into (created
+// automatically the first time someone attaches a photo).
+const INSPIRATION_FOLDER_NAME = "Andrea Site - Inspiration Photos";
+const MAX_INSPIRATION_PHOTOS = 3;
+
 // ------------------------------------------------------------------------
 
 const BOOKINGS_SHEET = "Bookings";
@@ -49,6 +54,7 @@ const DASHBOARD_SHEET = "Dashboard";
 const BOOKINGS_HEADERS = [
   "Timestamp", "Name", "Contact", "Event Date", "Time", "Event Type",
   "Plan", "Price", "Price (numeric est.)", "Services Requested", "Message", "Status",
+  "Inspiration Photos",
 ];
 const CONTENT_HEADERS = ["Timestamp", "Platform", "URL", "Caption", "Active"];
 
@@ -111,6 +117,7 @@ function handleBooking(data) {
   const priceNumeric = extractNumber(data.price);
   const check = checkBookingRules(data.date, data.time, data.plan, sheet);
   const conflict = check.blocked;
+  const photoLinks = saveInspirationPhotos(data.photos, data.name);
 
   sheet.appendRow([
     new Date(),
@@ -125,12 +132,43 @@ function handleBooking(data) {
     data.services || "",
     data.message || "",
     conflict ? `CONFLICT — ${check.reason}` : "New",
+    photoLinks.join("\n"),
   ]);
 
   createCalendarEvent(data, conflict);
-  sendBookingEmail(data, conflict, check.reason);
+  sendBookingEmail(data, conflict, check.reason, photoLinks);
 
   return jsonOutput({ ok: true, conflict, reason: check.reason || "" });
+}
+
+/**
+ * Decodes any base64 inspiration photos the client attached and saves
+ * them into a shared Drive folder, returning their view URLs. Never
+ * throws — a photo-saving problem shouldn't block the booking itself.
+ */
+function saveInspirationPhotos(photos, clientName) {
+  if (!Array.isArray(photos) || photos.length === 0) return [];
+  try {
+    const folder = getInspirationFolder();
+    const stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd_HHmmss");
+    return photos.slice(0, MAX_INSPIRATION_PHOTOS).map((photo, i) => {
+      const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(photo && photo.dataUrl || "");
+      if (!match) return null;
+      const bytes = Utilities.base64Decode(match[2]);
+      const blob = Utilities.newBlob(bytes, match[1], `${clientName || "client"}-${stamp}-${i + 1}`);
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      return file.getUrl();
+    }).filter(Boolean);
+  } catch (err) {
+    Logger.log("saveInspirationPhotos failed: " + err);
+    return [];
+  }
+}
+
+function getInspirationFolder() {
+  const existing = DriveApp.getFoldersByName(INSPIRATION_FOLDER_NAME);
+  return existing.hasNext() ? existing.next() : DriveApp.createFolder(INSPIRATION_FOLDER_NAME);
 }
 
 /**
@@ -234,7 +272,7 @@ function createCalendarEvent(data, conflict) {
   }
 }
 
-function sendBookingEmail(data, conflict, reason) {
+function sendBookingEmail(data, conflict, reason, photoLinks) {
   if (!NOTIFY_EMAILS || NOTIFY_EMAILS.length === 0) return;
   const subject = `${conflict ? "⚠️ NEEDS ATTENTION — " : ""}New booking request: ${data.name || "Someone"} (${data.plan || ""})`;
   const body = [
@@ -251,6 +289,9 @@ function sendBookingEmail(data, conflict, reason) {
     `Plan selected: ${data.plan || ""} (${data.price || ""})`,
     `Services requested: ${data.services || ""}`,
     `Message: ${data.message || ""}`,
+    photoLinks && photoLinks.length
+      ? `\nInspiration photos:\n${photoLinks.join("\n")}`
+      : ``,
     ``,
     `This was automatically logged in your Bookings spreadsheet and added to your calendar.`,
   ].join("\n");
@@ -317,6 +358,7 @@ function jsonOutput(obj, callback) {
 function setupSheets() {
   ensureSheet(BOOKINGS_SHEET, BOOKINGS_HEADERS);
   ensureSheet(CONTENT_SHEET, CONTENT_HEADERS);
+  getInspirationFolder(); // creates the Drive folder + grants Drive access now
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let dash = ss.getSheetByName(DASHBOARD_SHEET);
@@ -334,12 +376,12 @@ function setupSheets() {
 
   dash.getRange("A6").setValue("By Event Type").setFontWeight("bold");
   dash.getRange("A7").setFormula(
-    `=QUERY(${BOOKINGS_SHEET}!A:L,"select F, count(F), sum(I) where F is not null and F <> '' group by F label count(F) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
+    `=QUERY(${BOOKINGS_SHEET}!A:M,"select F, count(F), sum(I) where F is not null and F <> '' group by F label count(F) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
   );
 
   dash.getRange("D6").setValue("By Plan").setFontWeight("bold");
   dash.getRange("D7").setFormula(
-    `=QUERY(${BOOKINGS_SHEET}!A:L,"select G, count(G), sum(I) where G is not null and G <> '' group by G label count(G) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
+    `=QUERY(${BOOKINGS_SHEET}!A:M,"select G, count(G), sum(I) where G is not null and G <> '' group by G label count(G) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
   );
 
   dash.autoResizeColumns(1, 6);

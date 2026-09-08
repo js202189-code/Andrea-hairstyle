@@ -132,6 +132,38 @@ function selectPackageById(id) {
 
 // ---- Booking form ------------------------------------------------------
 
+const MAX_INSPO_PHOTOS = 3;
+const MAX_INSPO_SOURCE_BYTES = 15 * 1024 * 1024; // 15MB per original file, before resizing
+
+// Downscales an image file in the browser (canvas) and returns a small
+// JPEG data URL — keeps the booking payload light regardless of how huge
+// the original phone photo was.
+function resizeImageFile(file, maxDim = 1280, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Could not read image"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve({ name: file.name, dataUrl: canvas.toDataURL("image/jpeg", quality) });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 async function checkAvailability(date, time, planName) {
   if (!backendReady() || !date) return { available: true };
   try {
@@ -154,6 +186,62 @@ function initBookingForm() {
   const dateInput = form.querySelector('input[name="date"]');
   const timeInput = form.querySelector('input[name="time"]');
   const packagesGrid = document.getElementById("packages-grid");
+  const inspoInput = document.getElementById("inspo-input");
+  const inspoPreview = document.getElementById("inspo-preview");
+  const inspoStatusEl = document.getElementById("inspo-status");
+  let inspoPhotos = []; // [{ name, dataUrl }], resized client-side
+
+  function renderInspoPreview() {
+    if (!inspoPreview) return;
+    inspoPreview.innerHTML = inspoPhotos.map((p, i) => `
+      <div class="inspo-thumb">
+        <img src="${p.dataUrl}" alt="${p.name}">
+        <button type="button" data-index="${i}" aria-label="Remove photo">×</button>
+      </div>
+    `).join("");
+    inspoPreview.querySelectorAll("button[data-index]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        inspoPhotos.splice(Number(btn.dataset.index), 1);
+        renderInspoPreview();
+      });
+    });
+  }
+
+  inspoInput?.addEventListener("change", async () => {
+    const files = Array.from(inspoInput.files || []);
+    inspoInput.value = ""; // allow re-selecting the same file(s) later
+    if (inspoStatusEl) {
+      inspoStatusEl.textContent = "";
+      inspoStatusEl.className = "form-status";
+    }
+
+    for (const file of files) {
+      if (inspoPhotos.length >= MAX_INSPO_PHOTOS) {
+        if (inspoStatusEl) {
+          inspoStatusEl.textContent = `You can attach up to ${MAX_INSPO_PHOTOS} photos.`;
+          inspoStatusEl.className = "form-status form-status-warn";
+        }
+        break;
+      }
+      if (!file.type.startsWith("image/")) continue;
+      if (file.size > MAX_INSPO_SOURCE_BYTES) {
+        if (inspoStatusEl) {
+          inspoStatusEl.textContent = `"${file.name}" is too large (15MB max).`;
+          inspoStatusEl.className = "form-status form-status-warn";
+        }
+        continue;
+      }
+      try {
+        inspoPhotos.push(await resizeImageFile(file));
+        renderInspoPreview();
+      } catch (err) {
+        if (inspoStatusEl) {
+          inspoStatusEl.textContent = `Couldn't process "${file.name}" — try a different photo.`;
+          inspoStatusEl.className = "form-status form-status-warn";
+        }
+      }
+    }
+  });
 
   function updateSummary() {
     if (!summaryEl) return;
@@ -233,6 +321,7 @@ function initBookingForm() {
       submittedAt: new Date().toISOString(),
       hp: fd.get("company"),
       loadedAt: PAGE_LOADED_AT,
+      photos: inspoPhotos,
     };
 
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -254,6 +343,8 @@ function initBookingForm() {
       form.reset();
       renderPackages();
       updateSummary();
+      inspoPhotos = [];
+      renderInspoPreview();
     } catch (err) {
       statusEl.textContent = "Something went wrong sending your request. Please try again or reach out on Instagram/TikTok.";
       statusEl.className = "form-status form-status-warn";
