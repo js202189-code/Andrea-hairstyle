@@ -104,10 +104,17 @@ textarea{min-height:120px;resize:vertical}
 .content-card strong{display:block;font-family:Georgia,serif;font-size:18px;margin:8px 0}
 .content-link{color:var(--gold);font-weight:700;font-size:13px}
 
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:32px}
+.two-col h3{font-family:Georgia,serif;font-size:20px;margin:0 0 16px}
+.two-col ul{margin:0;padding:0 0 0 20px;color:var(--muted)}
+.two-col li{margin-bottom:12px;line-height:1.5}
+.two-col li strong{color:var(--ink)}
+.pay-contact{margin-top:18px;padding:16px 18px;background:#fff;border:1px solid var(--line);border-radius:14px;font-size:14px}
+
 @media(max-width:850px){
  .nav-links{display:none}
  .hero{min-height:670px}
- .split,.pricing{grid-template-columns:1fr}
+ .split,.pricing,.two-col{grid-template-columns:1fr}
  .service-grid{grid-template-columns:1fr 1fr}
  .portfolio-grid{grid-template-columns:1fr 1fr}
  .pkg-grid,.content-grid{grid-template-columns:1fr 1fr}
@@ -137,6 +144,7 @@ textarea{min-height:120px;resize:vertical}
       <a href="#about">Why Andrea</a>
       <a href="#meet-andrea">Meet Andrea</a>
       <a href="#book">Book</a>
+      <a href="#booking-info">Booking & Fees</a>
       <a href="#policy">Policies</a>
     </div>
   </div>
@@ -304,7 +312,39 @@ textarea{min-height:120px;resize:vertical}
 </div>
 </section>
 
-<section class="band" id="policy">
+<section class="band" id="booking-info">
+<div class="container">
+  <div class="section-kicker">Locking in your date</div>
+  <h2 class="section-title">Booking & Fees</h2>
+  <p class="intro">Here's how securing your appointment works, and a few extra charges that can apply.</p>
+  <div class="two-col">
+    <div>
+      <h3>How to book your appointment</h3>
+      <ul>
+        <li>Confirm your date and how many additional people (if any) will be included in the service.</li>
+        <li>Once availability is confirmed, a deposit secures your appointment on the schedule.</li>
+        <li><strong>Quinceañera deposit:</strong> $75</li>
+        <li><strong>Family & friends deposit:</strong> $50</li>
+        <li><strong>Accepted payment methods:</strong> Zelle, Cash App, Apple Pay, Cash</li>
+      </ul>
+      <div class="pay-contact">
+        Send your deposit to <strong>(915) 251-9682</strong> — Andrea Bencomo. Reach out if you need help with any payment method.
+      </div>
+    </div>
+    <div>
+      <h3>Additional fees</h3>
+      <ul>
+        <li><strong>Hair extensions application:</strong> +$20 (client provides their own extensions)</li>
+        <li><strong>Extra-long hair</strong> (past the reference length shown): +$20</li>
+        <li><strong>Arriving with wet hair:</strong> +$25</li>
+        <li><strong>More than 30 minutes late</strong> to your scheduled appointment: +$30, out of respect for the artist's time</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="policy">
 <div class="container">
   <div class="section-kicker">Please read before booking</div>
   <h2 class="section-title">Cancellation Policy</h2>
