@@ -200,7 +200,7 @@ function checkBookingRules(dateStr, timeStr, planName, sheet) {
     const bufferMs = SOLO_BUFFER_HOURS * 60 * 60 * 1000;
 
     const tooClose = rows.some(row => {
-      const rowDate = row[3], rowTime = row[4], rowPlan = row[6];
+      const rowDate = normalizeDateStr(row[3]), rowTime = normalizeTimeStr(row[4]), rowPlan = String(row[6] || "");
       if (rowPlan !== SOLO_PLAN_NAME || !rowDate || !rowTime) return false;
       const existing = new Date(`${rowDate}T${rowTime}:00`);
       if (isNaN(existing.getTime())) return false;
@@ -218,7 +218,7 @@ function checkBookingRules(dateStr, timeStr, planName, sheet) {
 
   // Every other plan: only one such booking allowed per day.
   const dayTaken = rows.some(row => {
-    const rowDate = row[3], rowPlan = row[6];
+    const rowDate = normalizeDateStr(row[3]), rowPlan = String(row[6] || "");
     return rowDate === dateStr && rowPlan && rowPlan !== SOLO_PLAN_NAME;
   });
 
@@ -313,6 +313,24 @@ function isRateLimited(action) {
   if (current >= MAX_SUBMISSIONS_PER_MINUTE) return true;
   cache.put(key, String(current + 1), 90);
   return false;
+}
+
+// Sheet cells can end up holding either the plain "YYYY-MM-DD"/"HH:MM"
+// text we write, or (depending on how a row was entered) a real Date
+// object — these normalize either form back to a comparable string so
+// checkBookingRules() never silently mismatches.
+function normalizeDateStr(value) {
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+  return String(value || "").trim();
+}
+
+function normalizeTimeStr(value) {
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "HH:mm");
+  }
+  return String(value || "").trim();
 }
 
 function extractNumber(priceStr) {
