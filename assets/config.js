@@ -26,6 +26,12 @@ const SOLO_BUFFER_HOURS = 3;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1FAli5UZy_0BCxIIxWcj6Gf8ueGTAc3y7KLU3OVoQno0/edit";
 const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/u/0/r";
 
+// Cash App $Cashtag — used to build the "scan to pay" QR codes on the
+// Booking & Fees section. Change this if Andrea's Cashtag ever changes,
+// then regenerate the QR images in assets/images/cashapp-qr-*.png to match
+// (they're static images, not generated live).
+const CASHAPP_CASHTAG = "$AndreaBencomo";
+
 // Social links.
 const SOCIAL = {
   instagram: "https://instagram.com/andreaaa.b_",

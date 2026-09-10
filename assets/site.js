@@ -392,6 +392,21 @@ async function loadContentFeed() {
   }
 }
 
+// Cash App's public payment links follow https://cash.app/$Cashtag[/amount]
+// — no API or account access needed, just the Cashtag. Building the href
+// here (instead of hardcoding it in index.html) keeps CASHAPP_CASHTAG in
+// config.js as the one place to update if it ever changes.
+function wireCashAppLinks() {
+  if (typeof CASHAPP_CASHTAG === "undefined" || !CASHAPP_CASHTAG) return;
+  // Cashtags are letters/numbers only after the leading "$", so this is
+  // safe to drop straight into the URL path unescaped (Cash App's own
+  // links look exactly like this: cash.app/$cashtag).
+  const link75 = document.getElementById("cashapp-link-75");
+  const link50 = document.getElementById("cashapp-link-50");
+  if (link75) link75.href = `https://cash.app/${CASHAPP_CASHTAG}/75`;
+  if (link50) link50.href = `https://cash.app/${CASHAPP_CASHTAG}/50`;
+}
+
 function renderFooterSocial() {
   const wrap = document.getElementById("footer-social");
   if (!wrap || typeof SOCIAL === "undefined") return;
@@ -406,4 +421,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initBookingForm();
   loadContentFeed();
   renderFooterSocial();
+  wireCashAppLinks();
 });

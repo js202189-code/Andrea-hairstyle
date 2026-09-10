@@ -119,11 +119,18 @@ textarea{min-height:120px;resize:vertical}
 .content-link{color:var(--gold);font-weight:700;font-size:13px}
 
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:32px}
+.two-col>div{min-width:0}
 .two-col h3{font-family:Georgia,serif;font-size:20px;margin:0 0 16px}
 .two-col ul{margin:0;padding:0 0 0 20px;color:var(--muted)}
 .two-col li{margin-bottom:12px;line-height:1.5}
 .two-col li strong{color:var(--ink)}
 .pay-contact{margin-top:18px;padding:16px 18px;background:#fff;border:1px solid var(--line);border-radius:14px;font-size:14px}
+.cashapp-qr-grid{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px}
+.cashapp-qr-card{flex:1;min-width:180px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+.cashapp-qr-card img{width:120px;height:120px;display:block;margin:0 auto 10px;border-radius:8px}
+.cashapp-qr-card span{display:block;font-size:13px;color:var(--muted)}
+.cashapp-qr-card span strong{color:var(--ink)}
+.cashapp-qr-card a{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:var(--gold)}
 
 .inspo-preview{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
 .inspo-preview:empty{margin-top:0}
@@ -319,7 +326,19 @@ textarea{min-height:120px;resize:vertical}
         <li><strong>Accepted payment methods:</strong> Zelle, Cash App, Apple Pay, Cash</li>
       </ul>
       <div class="pay-contact">
-        Send your deposit to <strong>(915) 251-9682</strong> — Andrea Bencomo. Reach out if you need help with any payment method.
+        Send your deposit to <strong>(915) 251-9682</strong> — Andrea Bencomo (Zelle, Apple Pay, or Cash). Reach out if you need help with any payment method.
+      </div>
+      <div class="cashapp-qr-grid" id="cashapp-qr-grid">
+        <div class="cashapp-qr-card">
+          <img src="assets/images/cashapp-qr-75.png" alt="Scan to pay the $75 Quinceañera deposit with Cash App" loading="lazy">
+          <span>Scan to pay <strong>$75</strong> Quinceañera deposit</span>
+          <a id="cashapp-link-75" href="#" target="_blank" rel="noopener">Or tap to open Cash App →</a>
+        </div>
+        <div class="cashapp-qr-card">
+          <img src="assets/images/cashapp-qr-50.png" alt="Scan to pay the $50 Family & Friends deposit with Cash App" loading="lazy">
+          <span>Scan to pay <strong>$50</strong> Family & Friends deposit</span>
+          <a id="cashapp-link-50" href="#" target="_blank" rel="noopener">Or tap to open Cash App →</a>
+        </div>
       </div>
     </div>
     <div>
