@@ -283,9 +283,24 @@ function initBookingForm() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    // Disable the button immediately — before any awaited work — so a
+    // second click/tap while the availability check is still in flight
+    // (the slow part) can't fire a second, independent submission and
+    // create a duplicate booking.
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Checking availability...";
+
+    const reset = () => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Send Booking Request";
+    };
+
     if (!backendReady()) {
       statusEl.textContent = "This form isn't connected to Andrea's booking system yet. For now, please reach out on Instagram or TikTok directly — see the links below.";
       statusEl.className = "form-status form-status-warn";
+      reset();
       return;
     }
 
@@ -293,6 +308,7 @@ function initBookingForm() {
     if (selected.length === 0) {
       statusEl.textContent = "Please select at least one plan above before booking.";
       statusEl.className = "form-status form-status-warn";
+      reset();
       return;
     }
     const { name: planName, price: planPrice } = combineSelectedPackages(selected);
@@ -303,6 +319,7 @@ function initBookingForm() {
     if (!result.available) {
       statusEl.textContent = result.reason || "That date/time isn't available. Please choose a different one.";
       statusEl.className = "form-status form-status-warn";
+      reset();
       return;
     }
 
@@ -324,8 +341,6 @@ function initBookingForm() {
       photos: inspoPhotos,
     };
 
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
     submitBtn.textContent = "Sending...";
 
     try {
@@ -349,8 +364,7 @@ function initBookingForm() {
       statusEl.textContent = "Something went wrong sending your request. Please try again or reach out on Instagram/TikTok.";
       statusEl.className = "form-status form-status-warn";
     } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Send Booking Request";
+      reset();
     }
   });
 }
