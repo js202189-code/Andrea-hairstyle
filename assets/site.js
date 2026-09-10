@@ -378,8 +378,18 @@ async function loadContentFeed() {
   }
 }
 
+function renderFooterSocial() {
+  const wrap = document.getElementById("footer-social");
+  if (!wrap || typeof SOCIAL === "undefined") return;
+  wrap.innerHTML = `
+    <a href="${SOCIAL.instagram}" target="_blank" rel="noopener">Instagram ${SOCIAL.instagramHandle}</a>
+    <a href="${SOCIAL.tiktok}" target="_blank" rel="noopener">TikTok ${SOCIAL.tiktokHandle}</a>
+  `;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderPackages();
   initBookingForm();
   loadContentFeed();
+  renderFooterSocial();
 });

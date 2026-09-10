@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+
+Sitemap: https://js202189-code.github.io/Andrea-hairstyle/sitemap.xml

@@ -45,6 +45,12 @@ const SOLO_BUFFER_HOURS = 3;
 const INSPIRATION_FOLDER_NAME = "Andrea Site - Inspiration Photos";
 const MAX_INSPIRATION_PHOTOS = 3;
 
+// Shown in the client confirmation email. Keep in sync with the contact
+// info / SOCIAL handles in assets/config.js and index.html.
+const BUSINESS_PHONE = "(915) 251-9682";
+const BUSINESS_INSTAGRAM_HANDLE = "@andreaaa.b_";
+const BUSINESS_TIKTOK_HANDLE = "@andrea.bencomo26";
+
 // ------------------------------------------------------------------------
 
 const BOOKINGS_SHEET = "Bookings";
@@ -137,6 +143,7 @@ function handleBooking(data) {
 
   createCalendarEvent(data, conflict);
   sendBookingEmail(data, conflict, check.reason, photoLinks);
+  sendClientConfirmationEmail(data);
 
   return jsonOutput({ ok: true, conflict, reason: check.reason || "" });
 }
@@ -302,6 +309,41 @@ function sendBookingEmail(data, conflict, reason, photoLinks) {
     // Don't fail the whole booking if the email step has an issue — the
     // sheet row and calendar event above already succeeded regardless.
     Logger.log("sendBookingEmail failed: " + err);
+  }
+}
+
+/**
+ * Sends the client a friendly "we got your request" email — only when
+ * their "contact" field looks like an email address (it's free text, so
+ * it's often a phone number instead). Never throws — a failure here
+ * shouldn't affect the booking itself, which is already saved by now.
+ */
+function sendClientConfirmationEmail(data) {
+  const contact = String(data.contact || "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) return;
+
+  try {
+    const subject = "You're on the books! Your request with Andrea Bencomo Hair & Makeup";
+    const body = [
+      `Hi ${data.name || "there"},`,
+      ``,
+      `Thanks for reaching out! Here's what was received for your booking request:`,
+      ``,
+      `Event date: ${data.date || ""}`,
+      `Preferred time: ${data.time || ""}`,
+      `Event type: ${data.eventType || ""}`,
+      `Plan selected: ${data.plan || ""} (${data.price || ""})`,
+      ``,
+      `Andrea will follow up shortly to confirm your appointment and go over next steps, including deposit details.`,
+      ``,
+      `Questions in the meantime? Reach out at ${BUSINESS_PHONE} or on Instagram/TikTok (${BUSINESS_INSTAGRAM_HANDLE} / ${BUSINESS_TIKTOK_HANDLE}).`,
+      ``,
+      `Talk soon!`,
+      `Andrea Bencomo Hair & Makeup`,
+    ].join("\n");
+    MailApp.sendEmail(contact, subject, body);
+  } catch (err) {
+    Logger.log("sendClientConfirmationEmail failed: " + err);
   }
 }
 
