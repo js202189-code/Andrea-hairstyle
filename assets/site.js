@@ -331,6 +331,7 @@ function initBookingForm() {
       date: fd.get("date"),
       time: fd.get("time"),
       eventType: fd.get("event"),
+      leadSource: fd.get("leadSource"),
       plan: planName,
       price: planPrice,
       services: fd.get("services"),
