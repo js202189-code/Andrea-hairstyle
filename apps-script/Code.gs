@@ -60,7 +60,7 @@ const DASHBOARD_SHEET = "Dashboard";
 const BOOKINGS_HEADERS = [
   "Timestamp", "Name", "Contact", "Event Date", "Time", "Event Type",
   "Plan", "Price", "Price (numeric est.)", "Services Requested", "Message", "Status",
-  "Inspiration Photos",
+  "Inspiration Photos", "Lead Source",
 ];
 const CONTENT_HEADERS = ["Timestamp", "Platform", "URL", "Caption", "Active"];
 
@@ -139,6 +139,7 @@ function handleBooking(data) {
     data.message || "",
     conflict ? `CONFLICT — ${check.reason}` : "New",
     photoLinks.join("\n"),
+    data.leadSource || "",
   ]);
 
   createCalendarEvent(data, conflict);
@@ -296,6 +297,7 @@ function sendBookingEmail(data, conflict, reason, photoLinks) {
     `Plan selected: ${data.plan || ""} (${data.price || ""})`,
     `Services requested: ${data.services || ""}`,
     `Message: ${data.message || ""}`,
+    `Heard about Andrea via: ${data.leadSource || "Not specified"}`,
     photoLinks && photoLinks.length
       ? `\nInspiration photos:\n${photoLinks.join("\n")}`
       : ``,
@@ -436,14 +438,19 @@ function setupSheets() {
 
   dash.getRange("A6").setValue("By Event Type").setFontWeight("bold");
   dash.getRange("A7").setFormula(
-    `=QUERY(${BOOKINGS_SHEET}!A:M,"select F, count(F), sum(I) where F is not null and F <> '' group by F label count(F) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
+    `=QUERY(${BOOKINGS_SHEET}!A:N,"select F, count(F), sum(I) where F is not null and F <> '' group by F label count(F) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
   );
 
   dash.getRange("D6").setValue("By Plan").setFontWeight("bold");
   dash.getRange("D7").setFormula(
-    `=QUERY(${BOOKINGS_SHEET}!A:M,"select G, count(G), sum(I) where G is not null and G <> '' group by G label count(G) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
+    `=QUERY(${BOOKINGS_SHEET}!A:N,"select G, count(G), sum(I) where G is not null and G <> '' group by G label count(G) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
   );
 
-  dash.autoResizeColumns(1, 6);
+  dash.getRange("G6").setValue("By Lead Source").setFontWeight("bold");
+  dash.getRange("G7").setFormula(
+    `=QUERY(${BOOKINGS_SHEET}!A:N,"select N, count(N), sum(I) where N is not null and N <> '' group by N label count(N) 'Bookings', sum(I) 'Est. Revenue ($)'",1)`
+  );
+
+  dash.autoResizeColumns(1, 9);
   Logger.log("Setup complete! Bookings, Content, and Dashboard sheets are ready.");
 }
