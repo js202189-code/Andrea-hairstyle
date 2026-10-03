@@ -325,7 +325,6 @@ function initBookingForm() {
 
     const payload = {
       action: "booking",
-      token: SHARED_TOKEN,
       name: fd.get("name"),
       contact: fd.get("contact"),
       date: fd.get("date"),
@@ -356,6 +355,7 @@ function initBookingForm() {
       });
       statusEl.textContent = "Thanks! Your booking request was sent to Andrea — she'll confirm with you shortly.";
       statusEl.className = "form-status form-status-ok";
+      openDepositModal();
       form.reset();
       renderPackages();
       updateSummary();
@@ -393,19 +393,31 @@ async function loadContentFeed() {
   }
 }
 
-// Cash App's public payment links follow https://cash.app/$Cashtag[/amount]
-// — no API or account access needed, just the Cashtag. Building the href
-// here (instead of hardcoding it in index.html) keeps CASHAPP_CASHTAG in
-// config.js as the one place to update if it ever changes.
-function wireCashAppLinks() {
-  if (typeof CASHAPP_CASHTAG === "undefined" || !CASHAPP_CASHTAG) return;
-  // Cashtags are letters/numbers only after the leading "$", so this is
-  // safe to drop straight into the URL path unescaped (Cash App's own
-  // links look exactly like this: cash.app/$cashtag).
-  const link75 = document.getElementById("cashapp-link-75");
-  const link50 = document.getElementById("cashapp-link-50");
-  if (link75) link75.href = `https://cash.app/${CASHAPP_CASHTAG}/75`;
-  if (link50) link50.href = `https://cash.app/${CASHAPP_CASHTAG}/50`;
+function initDepositModal() {
+  const modal = document.getElementById("deposit-modal");
+  const closeBtn = document.getElementById("deposit-close");
+  if (!modal || !closeBtn) return;
+
+  const close = () => {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+  };
+
+  closeBtn.addEventListener("click", close);
+  modal.addEventListener("click", event => {
+    if (event.target === modal) close();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("is-open")) close();
+  });
+}
+
+function openDepositModal() {
+  const modal = document.getElementById("deposit-modal");
+  if (!modal) return;
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  document.getElementById("deposit-close")?.focus();
 }
 
 function renderFooterSocial() {
@@ -422,5 +434,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initBookingForm();
   loadContentFeed();
   renderFooterSocial();
-  wireCashAppLinks();
+  initDepositModal();
 });

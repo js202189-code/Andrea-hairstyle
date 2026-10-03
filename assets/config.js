@@ -1,4 +1,4 @@
-$145+// ============================================================================
+// ============================================================================
 // SITE CONFIG — edit this file to update pricing, links, and backend wiring.
 // No other file needs to change for these kinds of updates.
 // ============================================================================
@@ -8,11 +8,6 @@ $145+// ========================================================================
 // "not connected yet" message instead of failing silently.
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyT4ACD43yjJ2-_0aXAhzWtL0UO6h5S4ou-tBfnb0JLkmFwwQ7eBxTx8lHEmf3sResS/exec";
 
-// A shared secret so random bots that find the Apps Script URL can't spam
-// your sheet. Change this to any phrase, then paste the SAME phrase into
-// the SHARED_TOKEN constant in apps-script/Code.gs.
-const SHARED_TOKEN = "AndreaGlam2026";
-
 // Scheduling rules (must match apps-script/Code.gs):
 //  - No bookings on Sundays, for any plan.
 //  - SOLO_PLAN_NAME can have multiple bookings per day, but needs at
@@ -20,17 +15,6 @@ const SHARED_TOKEN = "AndreaGlam2026";
 //  - Every other plan is limited to one booking per day.
 const SOLO_PLAN_NAME = "Hair or Makeup Only";
 const SOLO_BUFFER_HOURS = 3;
-
-// Links shown on the admin dashboard (admin.html) for quick access.
-// Fill these in once you've created the Google Sheet / Calendar.
-const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1FAli5UZy_0BCxIIxWcj6Gf8ueGTAc3y7KLU3OVoQno0/edit";
-const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/u/0/r";
-
-// Cash App $Cashtag — used to build the "scan to pay" QR codes on the
-// Booking & Fees section. Change this if Andrea's Cashtag ever changes,
-// then regenerate the QR images in assets/images/cashapp-qr-*.png to match
-// (they're static images, not generated live).
-const CASHAPP_CASHTAG = "$AndreaBencomo";
 
 // Social links.
 const SOCIAL = {
@@ -47,7 +31,7 @@ const PACKAGES = [
   {
     id: "solo-single",
     name: "Hair or Makeup Only",
-    price: "$125+",
+    price: "$145+",
     tagline: "One service, one person",
     description: "Hair OR makeup for a single person. Great for a quick refresh, photoshoot, or a low-key event.",
   },
