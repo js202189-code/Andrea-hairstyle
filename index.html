@@ -124,13 +124,20 @@ textarea{min-height:120px;resize:vertical}
 .two-col ul{margin:0;padding:0 0 0 20px;color:var(--muted)}
 .two-col li{margin-bottom:12px;line-height:1.5}
 .two-col li strong{color:var(--ink)}
-.pay-contact{margin-top:18px;padding:16px 18px;background:#fff;border:1px solid var(--line);border-radius:14px;font-size:14px}
-.cashapp-qr-grid{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px}
-.cashapp-qr-card{flex:1;min-width:180px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
-.cashapp-qr-card img{width:120px;height:120px;display:block;margin:0 auto 10px;border-radius:8px}
-.cashapp-qr-card span{display:block;font-size:13px;color:var(--muted)}
-.cashapp-qr-card span strong{color:var(--ink)}
-.cashapp-qr-card a{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:var(--gold)}
+.deposit-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+.deposit-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center}
+.deposit-card span{display:block;font-size:14px;color:var(--muted);line-height:1.5}
+.deposit-card span strong{display:block;color:var(--ink);font-family:Georgia,serif;font-size:26px;margin-bottom:4px}
+.deposit-card a{display:inline-block;margin-top:14px;padding:12px 18px;border-radius:999px;background:var(--ink);color:#fff;font-size:13px;font-weight:700;text-decoration:none}
+.deposit-card a:hover{background:var(--gold)}
+.deposit-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(20,15,16,.62)}
+.deposit-modal.is-open{display:flex}
+.deposit-dialog{position:relative;width:min(620px,100%);max-height:90vh;overflow:auto;background:var(--cream);border-radius:22px;padding:30px;box-shadow:0 24px 70px rgba(20,15,16,.3)}
+.deposit-dialog h2{font-family:Georgia,serif;margin:6px 36px 10px 0;font-size:28px}
+.deposit-dialog>p{color:var(--muted);line-height:1.6}
+.deposit-close{position:absolute;top:16px;right:16px;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:var(--ink);font-size:24px;cursor:pointer}
+.deposit-note{margin-top:16px;padding:13px 15px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:13px;color:var(--muted)}
+@media(max-width:620px){.deposit-options{grid-template-columns:1fr}}
 
 .inspo-preview{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
 .inspo-preview:empty{margin-top:0}
@@ -323,23 +330,8 @@ textarea{min-height:120px;resize:vertical}
         <li>Once availability is confirmed, a deposit secures your appointment on the schedule.</li>
         <li><strong>Quinceañera deposit:</strong> $75</li>
         <li><strong>Family & friends deposit:</strong> $50</li>
-        <li><strong>Accepted payment methods:</strong> Cash App, Apple Pay, Cash</li>
+        <li><strong>Online deposits:</strong> Secure checkout powered by Square</li>
       </ul>
-      <div class="pay-contact">
-        Send your deposit to <strong>(915) 251-9682</strong> — Andrea Bencomo (Apple Pay or Cash), or use Cash App below. Reach out if you need help with any payment method.
-      </div>
-      <div class="cashapp-qr-grid" id="cashapp-qr-grid">
-        <div class="cashapp-qr-card">
-          <img src="assets/images/cashapp-qr-75.png" alt="Scan to pay the $75 Quinceañera deposit with Cash App" loading="lazy">
-          <span>Scan to pay <strong>$75</strong> Quinceañera deposit</span>
-          <a id="cashapp-link-75" href="#" target="_blank" rel="noopener">Or tap to open Cash App →</a>
-        </div>
-        <div class="cashapp-qr-card">
-          <img src="assets/images/cashapp-qr-50.png" alt="Scan to pay the $50 Family & Friends deposit with Cash App" loading="lazy">
-          <span>Scan to pay <strong>$50</strong> Family & Friends deposit</span>
-          <a id="cashapp-link-50" href="#" target="_blank" rel="noopener">Or tap to open Cash App →</a>
-        </div>
-      </div>
     </div>
     <div>
       <h3>Additional fees</h3>
@@ -405,6 +397,26 @@ textarea{min-height:120px;resize:vertical}
   </div>
 </div>
 </section>
+
+<div class="deposit-modal" id="deposit-modal" aria-hidden="true">
+  <div class="deposit-dialog" role="dialog" aria-modal="true" aria-labelledby="deposit-title">
+    <button class="deposit-close" id="deposit-close" type="button" aria-label="Close deposit window">×</button>
+    <div class="section-kicker">Request received</div>
+    <h2 id="deposit-title">Next step: submit the applicable deposit</h2>
+    <p>Your request was received, but your appointment is not confirmed yet. Choose the deposit that applies. Andrea will verify your request, payment, and availability before confirming the appointment.</p>
+    <div class="deposit-options">
+      <div class="deposit-card">
+        <span><strong>$75</strong>Quinceañera booking deposit</span>
+        <a href="https://square.link/u/RwUnfr0l" target="_blank" rel="noopener">Pay securely with Square →</a>
+      </div>
+      <div class="deposit-card">
+        <span><strong>$50</strong>Family &amp; friends booking deposit</span>
+        <a href="https://square.link/u/rZYxbd8R" target="_blank" rel="noopener">Pay securely with Square →</a>
+      </div>
+    </div>
+    <div class="deposit-note">Not sure which deposit applies? Close this window and wait for Andrea's confirmation before paying. Deposits are non-refundable and do not confirm an appointment until Andrea verifies the booking and availability.</div>
+  </div>
+</div>
 
 <footer>
 <div class="container">
