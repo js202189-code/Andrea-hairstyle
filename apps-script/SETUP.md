@@ -19,15 +19,12 @@ Takes about 10 minutes. Do this once.
 2. Delete any placeholder code in the editor.
 3. Open [`Code.gs`](./Code.gs) from this folder, copy its entire contents,
    and paste it into the Apps Script editor.
-4. The pasted code already has a default `SHARED_TOKEN` (`AndreaGlam2026`) and
-   both of your emails in `NOTIFY_EMAILS` — no edits needed unless you want to
-   change them:
-   - `SHARED_TOKEN` — must exactly match `SHARED_TOKEN` in `assets/config.js`
-     (it already does, but if you change one, change the other).
-   - `NOTIFY_EMAILS` — who gets emailed when someone books.
-   - `CALENDAR_ID` — leave as `"primary"` to use the calendar of whichever
-     Google account you deploy this under.
-5. Click the **Save** icon (or Ctrl/Cmd+S).
+4. Open **Project Settings → Script properties** and create a property named
+   `NOTIFY_EMAILS`. Set its value to the business notification addresses,
+   separated by commas. This keeps notification addresses out of public code.
+5. Leave `CALENDAR_ID` as `"primary"` to use the calendar of whichever Google
+   account deploys the script.
+6. Click the **Save** icon (or Ctrl/Cmd+S).
 
 ## 3. Run the one-time setup
 
@@ -56,13 +53,8 @@ Takes about 10 minutes. Do this once.
 
 1. Open `assets/config.js` in this repository.
 2. Paste the Web app URL into `APPS_SCRIPT_URL`.
-3. Set `SHARED_TOKEN` to the **exact same phrase** you put in `Code.gs`.
-4. Set `GOOGLE_SHEET_URL` to the spreadsheet's URL (copy from the browser
-   address bar) — this powers the "Bookings & Spending Sheet" quick link on
-   `admin.html`.
-5. Set `GOOGLE_CALENDAR_URL` to `https://calendar.google.com/calendar/u/0/r`
-   (or Andrea's specific calendar link).
-6. Commit and push these changes.
+3. Commit and push the website changes. Do not place Google Sheet or Calendar
+   links, email addresses, or administrative passwords in the public site.
 
 ## 6. Test it
 
@@ -70,9 +62,8 @@ Takes about 10 minutes. Do this once.
    a test request.
 2. Check: a new row appears in the **Bookings** sheet, a new event appears on
    the calendar, and an email arrives at the notify address(es).
-3. Open `admin.html`, unlock with your `SHARED_TOKEN` phrase, and add a test
-   Instagram/TikTok link — refresh the homepage and confirm it shows up under
-   "Fresh off Instagram & TikTok".
+3. Confirm the notification goes only to the addresses stored in the private
+   `NOTIFY_EMAILS` Script Property.
 
 ## Updating later
 
@@ -80,23 +71,21 @@ Takes about 10 minutes. Do this once.
 - **Change the script's behavior** (e.g. add SMS, change email wording): edit
   `Code.gs` in the Apps Script editor, then **Deploy → Manage deployments →
   edit (pencil) → New version → Deploy**. The Web App URL stays the same.
-- **Who gets notified:** edit `NOTIFY_EMAILS` in `Code.gs` and redeploy a new
-  version as above.
+- **Who gets notified:** edit the private `NOTIFY_EMAILS` Script Property.
 
 ## Limitations (so there are no surprises)
 
 - This is a lightweight, no-cost setup — not a payment processor. It does not
   collect deposits or run payments. Andrea confirms and handles payment
   directly with clients.
-- The "admin" lock on `admin.html` is a simple shared phrase, not real
-  authentication — don't share the admin.html link publicly, and don't rely
-  on it for anything sensitive.
+- Administrative actions are not accepted from the public website. Manage
+  bookings and featured-content rows directly in the private Google Sheet.
 - "Who has access: Anyone" on the Web App deployment is required so the
   public site (visitors aren't logged into Google) can reach it — but it
   does NOT expose your Bookings sheet, calendar, or email. It only lets
-  people submit a booking or a content link, or fetch the public "Content"
-  list. The script has a built-in honeypot field, a bot-speed check, and a
-  20-submissions-per-minute cap to cut down on spam/junk entries.
+  people submit a validated booking request or fetch the public "Content"
+  list. The script has a honeypot, bot-speed check, strict field validation,
+  duplicate protection, and a conservative submission cap.
 - If you outgrow this (need SMS reminders, online deposits, staff logins),
   the natural next step is a dedicated booking platform (e.g. Square
   Appointments, Vagaro) — the site's booking form can be swapped to point at

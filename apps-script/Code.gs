@@ -14,15 +14,16 @@
 
 // ---- EDIT THESE -------------------------------------------------------
 
-// Must exactly match SHARED_TOKEN in assets/config.js.
-const SHARED_TOKEN = "AndreaGlam2026";
+// Public booking requests are intentionally allowed without a client-side
+// secret. A value shipped in browser JavaScript is never secret. Instead,
+// this backend validates every field, throttles traffic, and rejects recent
+// duplicates before touching Sheets, Calendar, Drive, or Mail.
+const MAX_BOOKINGS_PER_10_MINUTES = 8;
+const DUPLICATE_WINDOW_SECONDS = 10 * 60;
+const MAX_DAYS_IN_ADVANCE = 550;
 
-// Basic spam protection: caps how many submissions of one action type
-// (booking or content) can go through per minute, across all visitors.
-const MAX_SUBMISSIONS_PER_MINUTE = 20;
-
-// Who gets an email every time someone submits a booking request.
-const NOTIFY_EMAILS = ["js202189@gmail.com", "Andreabencomo0907@icloud.com"];
+// Notification addresses live in the private Apps Script property named
+// NOTIFY_EMAILS (comma-separated), not in this public repository.
 
 // Which Google Calendar to add booking events to. "primary" = the calendar
 // of whichever Google account this script is deployed under (Andrea's).
@@ -72,10 +73,6 @@ function doPost(e) {
     return jsonOutput({ ok: false, error: "Invalid JSON" });
   }
 
-  if (data.token !== SHARED_TOKEN) {
-    return jsonOutput({ ok: false, error: "Invalid token" });
-  }
-
   // Honeypot: a hidden field real visitors never see or fill in. Bots that
   // blindly fill every field trip this. Pretend success so they move on.
   if (data.hp) {
@@ -88,17 +85,73 @@ function doPost(e) {
     return jsonOutput({ ok: true });
   }
 
-  if (isRateLimited(data.action)) {
-    return jsonOutput({ ok: false, error: "Too many submissions right now — please try again in a minute." });
-  }
-
   if (data.action === "booking") {
+    const validation = validateBooking(data);
+    if (!validation.ok) return jsonOutput({ ok: false, error: validation.error });
+    if (isBookingRateLimited()) {
+      return jsonOutput({ ok: false, error: "Too many requests right now — please try again in a few minutes." });
+    }
+    if (isRecentDuplicate(data)) {
+      return jsonOutput({ ok: true, duplicate: true });
+    }
     return handleBooking(data);
   }
-  if (data.action === "content") {
-    return handleContent(data);
-  }
+  // Content publishing is no longer accepted from the public website.
+  // Andrea can add rows directly to the private Content sheet while signed
+  // into Google, which avoids exposing an administrative credential.
   return jsonOutput({ ok: false, error: "Unknown action" });
+}
+
+function validateBooking(data) {
+  const allowedEvents = ["Quinceañera", "Wedding / Bridal", "Prom", "Party / Special Event", "Photoshoot", "Other"];
+  const name = String(data.name || "").trim();
+  const contact = String(data.contact || "").trim();
+  const plan = String(data.plan || "").trim();
+  const services = String(data.services || "").trim();
+  const message = String(data.message || "").trim();
+  const leadSource = String(data.leadSource || "").trim();
+
+  if (name.length < 2 || name.length > 100) return { ok: false, error: "Please enter a valid name." };
+  if (contact.length < 5 || contact.length > 160) return { ok: false, error: "Please enter a valid phone number or email." };
+  if (plan.length < 2 || plan.length > 500) return { ok: false, error: "Please select a valid service plan." };
+  if (services.length > 1000 || message.length > 2000 || leadSource.length > 100) {
+    return { ok: false, error: "One or more fields are too long." };
+  }
+  if (data.eventType && allowedEvents.indexOf(String(data.eventType)) === -1) {
+    return { ok: false, error: "Please select a valid event type." };
+  }
+
+  const requestedDate = new Date(`${data.date || ""}T00:00:00`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const latest = new Date(today.getTime() + MAX_DAYS_IN_ADVANCE * 86400000);
+  if (isNaN(requestedDate.getTime()) || requestedDate < today || requestedDate > latest) {
+    return { ok: false, error: "Please choose a valid future event date." };
+  }
+  if (data.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(String(data.time))) {
+    return { ok: false, error: "Please choose a valid appointment time." };
+  }
+
+  const photos = Array.isArray(data.photos) ? data.photos : [];
+  if (photos.length > MAX_INSPIRATION_PHOTOS) return { ok: false, error: "Too many inspiration photos." };
+  const photosValid = photos.every(photo => {
+    const value = String(photo && photo.dataUrl || "");
+    return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value) && value.length <= 2500000;
+  });
+  if (!photosValid) return { ok: false, error: "One or more inspiration photos are invalid or too large." };
+
+  return { ok: true };
+}
+
+function isRecentDuplicate(data) {
+  const raw = [data.contact, data.date, data.time, data.plan].map(v => String(v || "").trim().toLowerCase()).join("|");
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw)
+    .map(byte => (byte + 256).toString(16).slice(-2)).join("");
+  const cache = CacheService.getScriptCache();
+  const key = `booking_duplicate_${digest}`;
+  if (cache.get(key)) return true;
+  cache.put(key, "1", DUPLICATE_WINDOW_SECONDS);
+  return false;
 }
 
 function doGet(e) {
@@ -281,7 +334,8 @@ function createCalendarEvent(data, conflict) {
 }
 
 function sendBookingEmail(data, conflict, reason, photoLinks) {
-  if (!NOTIFY_EMAILS || NOTIFY_EMAILS.length === 0) return;
+  const notifyEmails = getNotificationEmails();
+  if (notifyEmails.length === 0) return;
   const subject = `${conflict ? "⚠️ NEEDS ATTENTION — " : ""}New booking request: ${data.name || "Someone"} (${data.plan || ""})`;
   const body = [
     conflict
@@ -306,7 +360,7 @@ function sendBookingEmail(data, conflict, reason, photoLinks) {
   ].join("\n");
 
   try {
-    MailApp.sendEmail(NOTIFY_EMAILS.join(","), subject, body);
+    MailApp.sendEmail(notifyEmails.join(","), subject, body);
   } catch (err) {
     // Don't fail the whole booking if the email step has an issue — the
     // sheet row and calendar event above already succeeded regardless.
@@ -349,13 +403,18 @@ function sendClientConfirmationEmail(data) {
   }
 }
 
-function isRateLimited(action) {
+function getNotificationEmails() {
+  const value = PropertiesService.getScriptProperties().getProperty("NOTIFY_EMAILS") || "";
+  return value.split(",").map(email => email.trim()).filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+}
+
+function isBookingRateLimited() {
   const cache = CacheService.getScriptCache();
-  const bucket = Math.floor(Date.now() / 60000); // one-minute window
-  const key = `rl_${action}_${bucket}`;
+  const bucket = Math.floor(Date.now() / 600000); // ten-minute window
+  const key = `booking_rate_${bucket}`;
   const current = Number(cache.get(key) || 0);
-  if (current >= MAX_SUBMISSIONS_PER_MINUTE) return true;
-  cache.put(key, String(current + 1), 90);
+  if (current >= MAX_BOOKINGS_PER_10_MINUTES) return true;
+  cache.put(key, String(current + 1), 660);
   return false;
 }
 
