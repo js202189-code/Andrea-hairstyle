@@ -87,6 +87,14 @@ function combineSelectedPackages(selected) {
   return { name, price };
 }
 
+// Keep legacy backend scheduling names for renamed single selections.
+// Display names remain customer-facing; the services field records the choice.
+function bookingPlanName(selected) {
+  return selected.length === 1 && selected[0].pkg.bookingPlan
+    ? selected[0].pkg.bookingPlan
+    : combineSelectedPackages(selected).name;
+}
+
 function renderPackages() {
   const grid = document.getElementById("packages-grid");
   if (!grid) return;
@@ -267,8 +275,8 @@ function initBookingForm() {
     }
     availabilityEl.textContent = "Checking availability...";
     availabilityEl.className = "form-status";
-    const { name } = combineSelectedPackages(getSelectedPackages());
-    const result = await checkAvailability(date, timeInput.value, name);
+    const planName = bookingPlanName(getSelectedPackages());
+    const result = await checkAvailability(date, timeInput.value, planName);
     if (!result.available) {
       availabilityEl.textContent = result.reason || "That date/time isn't available. Please choose a different one.";
       availabilityEl.className = "form-status form-status-warn";
@@ -311,7 +319,8 @@ function initBookingForm() {
       reset();
       return;
     }
-    const { name: planName, price: planPrice } = combineSelectedPackages(selected);
+    const { name: displayPlanName, price: planPrice } = combineSelectedPackages(selected);
+    const planName = bookingPlanName(selected);
 
     const fd = new FormData(form);
 
@@ -333,7 +342,9 @@ function initBookingForm() {
       leadSource: fd.get("leadSource"),
       plan: planName,
       price: planPrice,
-      services: fd.get("services"),
+      services: planName !== displayPlanName
+        ? `Selected service: ${displayPlanName}${fd.get("services") ? "\n" + fd.get("services") : ""}`
+        : fd.get("services"),
       message: fd.get("message"),
       submittedAt: new Date().toISOString(),
       hp: fd.get("company"),
@@ -345,24 +356,19 @@ function initBookingForm() {
 
     try {
       // Apps Script + browser fetch requires "text/plain" + no-cors to avoid
-      // a CORS preflight that Apps Script can't answer. We can't read the
-      // response back, so we treat a resolved fetch as success.
+      // a CORS preflight that Apps Script can't answer. The response is
+      // opaque: completion confirms neither acceptance nor delivery.
+      // Keep the entered details and do not prompt for payment.
       await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload),
       });
-      statusEl.textContent = "Thanks! Your booking request was sent to Andrea — she'll confirm with you shortly.";
-      statusEl.className = "form-status form-status-ok";
-      openDepositModal();
-      form.reset();
-      renderPackages();
-      updateSummary();
-      inspoPhotos = [];
-      renderInspoPreview();
+      statusEl.textContent = "Your request was submitted, but this website cannot confirm that Andrea received it. Please contact Andrea using the Instagram or TikTok links below to confirm receipt and availability before paying a deposit. Your details are still here; avoid resubmitting until Andrea checks, because the request may already have arrived.";
+      statusEl.className = "form-status form-status-warn";
     } catch (err) {
-      statusEl.textContent = "Something went wrong sending your request. Please try again or reach out on Instagram/TikTok.";
+      statusEl.textContent = "We could not confirm delivery of your request. Your details are still here. Please contact Andrea on Instagram or TikTok before resubmitting or paying a deposit, because the request may already have arrived.";
       statusEl.className = "form-status form-status-warn";
     } finally {
       reset();

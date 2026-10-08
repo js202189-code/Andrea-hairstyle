@@ -10,7 +10,8 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyT4ACD43yjJ2-_
 
 // Scheduling rules (must match apps-script/Code.gs):
 //  - No bookings on Sundays, for any plan.
-//  - SOLO_PLAN_NAME can have multiple bookings per day, but needs at
+//  - Single Hair Only/Makeup Only choices use the legacy SOLO_PLAN_NAME
+//    booking value and can have multiple bookings per day, but need at
 //    least SOLO_BUFFER_HOURS between them.
 //  - Every other plan is limited to one booking per day.
 const SOLO_PLAN_NAME = "Hair or Makeup Only";
@@ -29,11 +30,20 @@ const SOCIAL = {
 // and group size) — edit freely.
 const PACKAGES = [
   {
-    id: "solo-single",
-    name: "Hair or Makeup Only",
+    id: "hair-only",
+    name: "Hair Only",
+    bookingPlan: SOLO_PLAN_NAME,
     price: "$145+",
     tagline: "One service, one person",
-    description: "Hair OR makeup for a single person. Great for a quick refresh, photoshoot, or a low-key event.",
+    description: "Hairstyling for one person. Great for a photoshoot or special event.",
+  },
+  {
+    id: "makeup-only",
+    name: "Makeup Only",
+    bookingPlan: SOLO_PLAN_NAME,
+    price: "$125+",
+    tagline: "One service, one person",
+    description: "Makeup for one person. Great for a photoshoot or special event.",
   },
   {
     id: "signature-duo",
@@ -65,15 +75,23 @@ const PACKAGES = [
   },
   {
     id: "bridal",
-    name: "Bridal Package",
+    name: "Luxury Bridal",
+    bookingPlan: "Bridal Package",
     price: "$420+",
     tagline: "For the bride",
     description: "Bridal hair & makeup for the bride, including a trial-run consultation before the big day.",
   },
   {
+    id: "bridal-basic",
+    name: "Basic Bridal",
+    price: "$285+",
+    tagline: "Budget-friendly, no trial",
+    description: "Bridal hair & makeup using a blend of modern and timeless techniques, high-quality products, and a look designed to last 8+ hours. Includes a complimentary touch-up kit and a pre-event consultation via message. Does not include a hair & makeup trial.",
+  },
+  {
     id: "bridal-party",
     name: "Bridal Party Add-On",
-    price: "$150+ / person",
+    price: "$195+ / person",
     tagline: "Book alongside a Bridal Package",
     description: "Additional hair & makeup for bridesmaids, mothers, or family — booked together with a Bridal Package.",
     quantity: true,
