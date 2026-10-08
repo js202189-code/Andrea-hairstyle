@@ -99,16 +99,6 @@ const PACKAGES = [
     quantityLabel: "Number of people being added",
   },
   {
-    id: "family-package",
-    name: "Family Package",
-    price: "$195+",
-    tagline: "Soft glam for family & guests",
-    description: "Soft glam hair & makeup for family members and guests, tailored to each person's style and designed to stay fresh for 8+ hours — so everyone celebrates looking their best.",
-    quantity: true,
-    quantityMin: 1,
-    quantityLabel: "Number of people in this package",
-  },
-  {
     id: "custom-group",
     name: "Custom / Large Group",
     price: "Let's talk",
