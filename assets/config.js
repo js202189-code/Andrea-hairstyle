@@ -109,3 +109,9 @@ const PACKAGES = [
     quantityLabel: "Number of people in this package",
   },
 ];
+
+// Pending request intake; submitting a request does not reserve a date.
+const MANUAL_BOOKING_ENABLED = true;
+
+// Booking-only business endpoint; content feed keeps APPS_SCRIPT_URL.
+const BOOKING_API_URL = "https://script.google.com/macros/s/AKfycbwPezrexYur6Eak_jIGvOhDcgD4ojnPAV48OsxifqlZIzwfxsRPzmrkQdCbfE7wKm9X/exec"; // Verified business-owned pending request endpoint.
