@@ -18,6 +18,7 @@ function jsonpRequest(url) {
   return new Promise((resolve, reject) => {
     const callbackName = `__jsonp_cb_${Date.now()}_${jsonpCounter++}`;
     const script = document.createElement("script");
+    if (/[?&]action=bookingReceipt(?:&|$)/.test(url)) script.crossOrigin = "anonymous";
     let settled = false;
 
     const cleanup = () => {
@@ -197,6 +198,15 @@ function initBookingForm() {
   const inspoInput = document.getElementById("inspo-input");
   const inspoPreview = document.getElementById("inspo-preview");
   const inspoStatusEl = document.getElementById("inspo-status");
+  const manualEnabled=typeof MANUAL_BOOKING_ENABLED!=='undefined' && MANUAL_BOOKING_ENABLED;
+  function manualBookingEndpoint(){if(typeof BOOKING_API_URL!=='string' || !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(BOOKING_API_URL))throw Error('BOOKING_ENDPOINT_NOT_CONFIGURED');return BOOKING_API_URL;}
+  const manualTransport=manualEnabled ? createManualBookingTransport({
+    save:value=>sessionStorage.setItem('andreaBookingReceipt',value),load:()=>sessionStorage.getItem('andreaBookingReceipt'),
+    post:request=>fetch(manualBookingEndpoint(),{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(request)}),
+    read:params=>jsonpRequest(`${manualBookingEndpoint()}?${params.toString()}`)
+  }) : null;
+  let manualUiRevision=0;
+  if(manualTransport)manualTransport.recover().then(result=>{if(result && manualUiRevision===0){statusEl.textContent=result.view.message;statusEl.className='form-status form-status-warn';}});
   let inspoPhotos = []; // [{ name, dataUrl }], resized client-side
 
   function renderInspoPreview() {
@@ -258,6 +268,13 @@ function initBookingForm() {
       summaryEl.textContent = "No plan selected yet — pick one or more in the Pricing section above.";
       return;
     }
+    if(manualEnabled){const people=form.querySelector('input[name="personCount"]');
+      const extras=selected.filter(s=>s.pkg.id==='bridal-party').reduce((n,s)=>n+s.qty,0);
+      const base=selected.some(s=>s.pkg.id!=='bridal-party')?1:0;
+      const custom=selected.find(s=>s.pkg.id==='custom-group');
+      people.min=String(Math.max(1,base+extras,custom?custom.qty:0));
+      if(Number(people.value)<Number(people.min))people.value=people.min;
+    }
     const { name, price } = combineSelectedPackages(selected);
     summaryEl.textContent = `${name} — ${price}`;
   }
@@ -268,6 +285,7 @@ function initBookingForm() {
   updateSummary();
 
   async function updateAvailability() {
+    if(manualEnabled){if(availabilityEl){availabilityEl.textContent='Andrea checks your payment and availability before confirming. Requests do not reserve dates.';availabilityEl.className='form-status form-status-warn';}return;}
     const date = dateInput.value;
     if (!date || !availabilityEl) {
       if (availabilityEl) availabilityEl.textContent = "";
@@ -305,7 +323,7 @@ function initBookingForm() {
       submitBtn.textContent = "Send Booking Request";
     };
 
-    if (!backendReady()) {
+    if (!(manualEnabled ? (typeof BOOKING_API_URL==='string' && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(BOOKING_API_URL)) : backendReady())) {
       statusEl.textContent = "This form isn't connected to Andrea's booking system yet. For now, please reach out on Instagram or TikTok directly — see the links below.";
       statusEl.className = "form-status form-status-warn";
       reset();
@@ -324,6 +342,18 @@ function initBookingForm() {
 
     const fd = new FormData(form);
 
+    if(manualTransport){
+      manualUiRevision++;
+      const fields={name:fd.get('name'),contact:fd.get('contact'),date:fd.get('date'),time:fd.get('time'),
+        personCount:Number(fd.get('personCount')),eventType:fd.get('event'),leadSource:fd.get('leadSource'),
+        services:selected.map(({pkg,qty})=>({id:pkg.id,quantity:pkg.id==='bridal-party'?qty:1})),
+        servicesRequested:fd.get('services'),message:fd.get('message'),photos:inspoPhotos,hp:fd.get('company')};
+      try{const result=await manualTransport.submit(fields);statusEl.textContent=result.view.message;
+        if(result.view.kind!=='UNVERIFIED' && result.receipt && result.receipt.received)statusEl.textContent+=' Request reference: '+result.receipt.requestId;
+        statusEl.className='form-status form-status-warn';
+      }catch(err){statusEl.textContent='Could not safely save your request. Keep your details and contact Andrea before paying.';statusEl.className='form-status form-status-warn';}
+      reset();return;
+    }
     const result = await checkAvailability(fd.get("date"), fd.get("time"), planName);
     if (!result.available) {
       statusEl.textContent = result.reason || "That date/time isn't available. Please choose a different one.";

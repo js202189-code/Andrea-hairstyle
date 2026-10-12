@@ -327,9 +327,8 @@ textarea{min-height:120px;resize:vertical}
       <h3>How to book your appointment</h3>
       <ul>
         <li>Confirm your date and how many additional people (if any) will be included in the service.</li>
-        <li>Once availability is confirmed, a deposit secures your appointment on the schedule.</li>
-        <li><strong>Quinceañera deposit:</strong> $75</li>
-        <li><strong>Family & friends deposit:</strong> $50</li>
+        <li>Your request does not hold a date. Andrea checks your completed deposit payment and availability before confirming your reservation.</li>
+        <li><strong>Deposit for every service:</strong> $75 per person</li>
         <li><strong>Online deposits:</strong> Secure checkout powered by Square</li>
       </ul>
     </div>
@@ -376,6 +375,9 @@ textarea{min-height:120px;resize:vertical}
         <label>Selected plan(s)</label>
         <div class="small" id="selected-plans-summary">No plan selected yet — pick one or more in the Pricing section above.</div>
       </div>
+      <div class="full"><label>Number of people receiving services <input type="number" name="personCount" min="1" max="30" value="1" required></label>
+      <p>Deposit: $75 per person. Hair and makeup for one person counts once. Requests do not hold dates; Andrea checks payment before confirming.</p>
+      </div>
       <div><label>Name<input required name="name" placeholder="Your name"></label></div>
       <div><label>Phone or email<input required name="contact" placeholder="Best way to reach you"></label></div>
       <div><label>Event date<input required type="date" name="date"></label></div>
@@ -404,16 +406,7 @@ textarea{min-height:120px;resize:vertical}
     <div class="section-kicker">Request received</div>
     <h2 id="deposit-title">Next step: submit the applicable deposit</h2>
     <p>Your request was received, but your appointment is not confirmed yet. Choose the deposit that applies. Andrea will verify your request, payment, and availability before confirming the appointment.</p>
-    <div class="deposit-options">
-      <div class="deposit-card">
-        <span><strong>$75</strong>Quinceañera booking deposit</span>
-        <a href="https://square.link/u/RwUnfr0l" target="_blank" rel="noopener">Pay securely with Square →</a>
-      </div>
-      <div class="deposit-card">
-        <span><strong>$50</strong>Family &amp; friends booking deposit</span>
-        <a href="https://square.link/u/rZYxbd8R" target="_blank" rel="noopener">Pay securely with Square →</a>
-      </div>
-    </div>
+    <p>Deposit: $75 per person. Contact Andrea for the payment instructions matched to your request.</p>
     <div class="deposit-note">Not sure which deposit applies? Close this window and wait for Andrea's confirmation before paying. Deposits are non-refundable and do not confirm an appointment until Andrea verifies the booking and availability.</div>
   </div>
 </div>
@@ -428,6 +421,8 @@ textarea{min-height:120px;resize:vertical}
 </footer>
 
 <script src="assets/config.js"></script>
+<script src="assets/booking-receipt-draft.js"></script>
+<script src="assets/manual-booking.js"></script>
 <script src="assets/site.js"></script>
 </body>
 </html>
